@@ -1,0 +1,9 @@
+# Emacs things
+*~
+\#*#
+
+# Sublime things
+*.sublime-*
+
+# Node things
+node_modules/
