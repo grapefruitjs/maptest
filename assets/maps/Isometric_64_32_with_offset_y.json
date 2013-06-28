@@ -75,6 +75,11 @@
             },
          "spacing":0,
          "tileheight":64,
+         "tileoffset":
+            {
+             "x":0,
+             "y":17
+            },
          "tilewidth":64,
          "transparentcolor":"#ff00ff"
         }, 
@@ -107,6 +112,11 @@
             },
          "spacing":0,
          "tileheight":64,
+         "tileoffset":
+            {
+             "x":0,
+             "y":16
+            },
          "tilewidth":64,
          "transparentcolor":"#ff00ff"
         }, 
@@ -123,6 +133,11 @@
             },
          "spacing":0,
          "tileheight":64,
+         "tileoffset":
+            {
+             "x":0,
+             "y":20
+            },
          "tilewidth":64,
          "transparentcolor":"#ff00ff"
         }, 
@@ -139,6 +154,11 @@
             },
          "spacing":0,
          "tileheight":64,
+         "tileoffset":
+            {
+             "x":0,
+             "y":15
+            },
          "tilewidth":64,
          "transparentcolor":"#ff00ff"
         }],
