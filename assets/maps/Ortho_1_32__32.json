@@ -42,7 +42,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "image":"32_3_tiles.png",
+         "image":"gfx\/png\/32_3_tiles.png",
          "imageheight":34,
          "imagewidth":100,
          "margin":1,

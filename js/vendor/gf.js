@@ -16902,7 +16902,7 @@ gf.GameState = function(game, name, settings) {
      * @type AudioPlayer
      * @readOnly
      */
-    this.audio = new gf.AudioManager();
+    //this.audio = new gf.AudioManager();
 
     /**
      * The input instance for this game
@@ -21187,9 +21187,8 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
             tile.collisionType = props.type;
             tile.visible = true;
         } else {
-            var hitArea = new gf.Polygon(props.hitArea || set.properties.tileHitArea);
+            var hitArea = props.hitArea || set.properties.tileHitArea;
 
-            window.console.log('hitArea', hitArea);
             tile = new gf.Tile(this.game, position, {
                 texture: texture,
                 mass: Infinity,
@@ -21479,15 +21478,16 @@ gf.TiledTileset = function(settings) {
             throw 'Uneven number of values for tileHitArea on tileset! Should be a flat array of x/y values.';
         }
 
-        this.properties.tileHitArea = [];
+        var hv = [];
         for(var i = 0, il = h.length; i < il; i+=2) {
-            this.properties.tileHitArea.push(
+            hv.push(
                 new gf.Point(
                     parseFloat(h[i], 10),
                     parseFloat(h[i + 1], 10)
                 )
             );
         }
+        this.properties.tileHitArea = new gf.Polygon(hv);
     }
 
     //massage tile properties
@@ -21498,6 +21498,26 @@ gf.TiledTileset = function(settings) {
 
         if(v.isCollidable === 'true') v.isCollidable = true;
         if(v.isBreakable === 'true') v.isBreakable = true;
+
+        if(v.hitArea) {
+            var ha = v.hitArea.split(gf.utils._arrayDelim);
+
+            //odd number of values
+            if(ha.length % 2 !== 0) {
+                throw 'Uneven number of values for hitArea on a tile of a tileset! Should be a flat array of x/y values.';
+            }
+
+            var hav = [];
+            for(var p = 0, pl = ha.length; p < pl; p+=2) {
+                hav.push(
+                    new gf.Point(
+                        parseFloat(ha[p], 10),
+                        parseFloat(ha[p + 1], 10)
+                    )
+                );
+            }
+            v.hitArea = new gf.Polygon(hav);
+        }
     }
 
     //generate tile textures

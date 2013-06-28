@@ -20,7 +20,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "image":"greyBlack.png",
+         "image":"gfx\/png\/greyBlack.png",
          "imageheight":66,
          "imagewidth":131,
          "margin":1,
