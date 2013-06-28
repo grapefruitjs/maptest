@@ -53,11 +53,6 @@
             },
          "spacing":0,
          "tileheight":32,
-         "tileoffset":
-            {
-             "x":-16,
-             "y":0
-            },
          "tilewidth":64,
          "transparentcolor":"#ff00ff"
         }, 
@@ -90,11 +85,6 @@
             },
          "spacing":0,
          "tileheight":32,
-         "tileoffset":
-            {
-             "x":-13,
-             "y":0
-            },
          "tilewidth":64,
          "transparentcolor":"#ff00ff"
         }],
