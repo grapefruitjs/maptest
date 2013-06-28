@@ -21,20 +21,23 @@ define([
 
         game.loader.on('progress', function(evt) {
             //called on each load complete
-            if(obj.assetsProgress)
-                obj.assetsProgress.call(this, evt);
+            if(obj.onAssetsProgress)
+                obj.onAssetsProgress.call(this, evt);
         });
 
         //called when all are done loading
         game.loader.on('complete', function() {
-            if(obj.assetsComplete)
-                obj.assetsComplete.call(this, game);
+            if(obj.onAssetsComplete)
+                obj.onAssetsComplete.call(this, game);
 
             if(obj.startWorld)
                 game.loadWorld(obj.startWorld);
 
             //TODO: bind game keys
             //TODO: init HUD
+
+            if(obj.onGameReady)
+                obj.onGameReady.call(this, game);
 
             //render
             game.render();

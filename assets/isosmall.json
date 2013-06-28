@@ -5,6 +5,10 @@
          "height":5,
          "name":"Tile Layer 1",
          "opacity":1,
+         "properties":
+            {
+             "interactive":"true"
+            },
          "type":"tilelayer",
          "visible":true,
          "width":5,
@@ -637,7 +641,7 @@
          "name":"greyBlack",
          "properties":
             {
-
+             "tileHitArea":"0,16,32,0,64,16,32,32"
             },
          "spacing":1,
          "tileheight":64,

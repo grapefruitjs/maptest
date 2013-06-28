@@ -6,11 +6,21 @@ require([
         Game.start({
             containerId: 'game',
             startWorld: 'isosmall',
-            assetsProgress: function(evt) {
+            onAssetsProgress: function(evt) {
 
             },
-            assetsComplete: function(game) {
+            onAssetsComplete: function(game) {
+            },
+            onGameReady: function(game) {
                 window.GAME = game;
+
+                game.world.on('tile_mouseover', function(e) {
+                    e.tile.alpha = 0.5;
+                });
+
+                game.world.on('tile_mouseout', function(e) {
+                    e.tile.alpha = 1.0;
+                });
             }
         });
     });
