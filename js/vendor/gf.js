@@ -4,7 +4,7 @@
  * Copyright (c) 2012, Chad Engler
  * https://github.com/englercj/grapefruit
  *
- * Compiled: 2013-06-30
+ * Compiled: 2013-07-01
  *
  * GrapeFruit Game Engine is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -44,7 +44,7 @@ Object.freeze;Object.freeze=function(a){return typeof a=="function"?a:s(a)}}Obje
  * Copyright (c) 2012, Mat Groves
  * http://goodboydigital.com/
  *
- * Compiled: 2013-06-30
+ * Compiled: 2013-07-01
  *
  * Pixi.JS is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -166,7 +166,7 @@ PIXI.Rectangle.prototype.clone = function()
  * @param y {Number} The Y coord of the point to test
  * @return if the x/y coords are within this polygon
  */
-PIXI.Rectangle.contains = function(x, y)
+PIXI.Rectangle.prototype.contains = function(x, y)
 {
     if(this.width <= 0 || this.height <= 0)
         return false;
@@ -220,7 +220,7 @@ PIXI.Polygon = function(points)
  * @method clone
  * @return a copy of the polygon
  */
-PIXI.Polygon.clone = function()
+PIXI.Polygon.prototype.clone = function()
 {
 	var points = [];
 	for (var i=0; i<this.points.length; i++) {
@@ -236,7 +236,7 @@ PIXI.Polygon.clone = function()
  * @param y {Number} The Y coord of the point to test
  * @return if the x/y coords are within this polygon
  */
-PIXI.Polygon.contains = function(x, y)
+PIXI.Polygon.prototype.contains = function(x, y)
 {
     var inside = false;
 
@@ -295,7 +295,7 @@ PIXI.Circle = function(x, y, radius)
  * @method clone
  * @return a copy of the polygon
  */
-PIXI.Circle.clone = function()
+PIXI.Circle.prototype.clone = function()
 {
     return new PIXI.Circle(this.x, this.y, this.radius);
 }
@@ -306,7 +306,7 @@ PIXI.Circle.clone = function()
  * @param y {Number} The Y coord of the point to test
  * @return if the x/y coords are within this polygon
  */
-PIXI.Circle.contains = function(x, y)
+PIXI.Circle.prototype.contains = function(x, y)
 {
     if(this.radius <= 0)
         return false;
@@ -371,7 +371,7 @@ PIXI.Ellipse = function(x, y, width, height)
  * @method clone
  * @return a copy of the polygon
  */
-PIXI.Ellipse.clone = function()
+PIXI.Ellipse.prototype.clone = function()
 {
     return new PIXI.Ellipse(this.x, this.y, this.width, this.height);
 }
@@ -382,7 +382,7 @@ PIXI.Ellipse.clone = function()
  * @param y {Number} The Y coord of the point to test
  * @return if the x/y coords are within this polygon
  */
-PIXI.Ellipse.contains = function(x, y)
+PIXI.Ellipse.prototype.contains = function(x, y)
 {
     if(this.width <= 0 || this.height <= 0)
         return false;
@@ -2407,11 +2407,13 @@ PIXI.InteractionManager.prototype.hitTest = function(item, interactionData)
 		y = a00 * id * global.y + -a10 * id * global.x + (-a12 * a00 + a02 * a10) * id;
 
 	//a sprite or display object with a hit area defined
-	if(item.hitArea && item.hitArea.contains && item.hitArea.contains(x, y)) {
-		if(isSprite)
-			interactionData.target = item;
+	if(item.hitArea && item.hitArea.contains) {
+		if(item.hitArea.contains(x, y)) {
+			if(isSprite)
+				interactionData.target = item;
 
-		return true;
+			return true;
+		}
 	}
 	// a sprite with no hitarea defined
 	else if(isSprite)
@@ -3993,8 +3995,8 @@ PIXI.WebGLRenderer.updateTexture = function(texture)
 	 	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 	 	
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.source);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		
 		// reguler...
 		
@@ -16983,7 +16985,7 @@ gf.inherits(gf.AnimatedSprite, gf.Sprite, {
  * A basic Camera object that provides some effects. It also will contain the HUD and GUI
  * to ensure they are using "screen-coords".
  *
- * TODO: Currently fade/flash don't show the colors. How should I actually show them, a PIXI.Sprite?
+ * TODO: Currently fade/flash don't show the colors. How should I actually show them, a gf.Sprite?
  *
  * @class Camera
  * @extends DisplayObject
@@ -16996,18 +16998,18 @@ gf.Camera = function(game, settings) {
      * The bounds of that the camera can move to
      *
      * @property bounds
-     * @type PIXI.Rectangle
+     * @type Rectangle
      * @readOnly
      * @private
      */
-    this._bounds = new PIXI.Rectangle(0, 0, 0, 0);
+    this._bounds = new gf.Rectangle(0, 0, 0, 0);
 
     /**
      * When following a sprite this is the space within the camera that it can move around
      * before the camera moves to track it.
      *
      * @property _deadzone
-     * @type PIXI.Rectangle
+     * @type Rectangle
      * @readOnly
      * @private
      */
@@ -17268,7 +17270,7 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
             case gf.Camera.FOLLOW.PLATFORMER:
                 var w = this.size.x / 8;
                 var h = this.size.y / 3;
-                this._deadzone = new PIXI.Rectangle(
+                this._deadzone = new gf.Rectangle(
                     (this.size.x - w) / 2,
                     (this.size.y - h) / 2 - (h / 4),
                     w,
@@ -17277,7 +17279,7 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
                 break;
             case gf.Camera.FOLLOW.TOPDOWN:
                 var sq4 = Math.max(this.size.x, this.size.y) / 4;
-                this._deadzone = new PIXI.Rectangle(
+                this._deadzone = new gf.Rectangle(
                     (this.size.x - sq4) / 2,
                     (this.size.y - sq4) / 2,
                     sq4,
@@ -17286,7 +17288,7 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
                 break;
             case gf.Camera.FOLLOW.TOPDOWN_TIGHT:
                 var sq8 = Math.max(this.size.x, this.size.y) / 8;
-                this._deadzone = new PIXI.Rectangle(
+                this._deadzone = new gf.Rectangle(
                     (this.size.x - sq8) / 2,
                     (this.size.y - sq8) / 2,
                     sq8,
@@ -19945,10 +19947,10 @@ gf.inherits(gf.TiledMap, gf.Map, {
             data: data
         });
     },
-    onObjectEvent: function(eventName, tile, data) {
+    onObjectEvent: function(eventName, obj, data) {
         this.emit({
             type: 'object.' + eventName,
-            tile: tile,
+            object: obj,
             data: data
         });
     }
@@ -20112,8 +20114,8 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         //grab some values for the tile
         texture = set.getTileTexture(tileId);
         props = set.getTileProperties(tileId);
-        hitArea = props.hitArea || set.properties.tileHitArea;
-        interactive = this._getInteractive(set, props),
+        hitArea = props.hitArea || set.properties.hitArea;
+        interactive = this._getInteractive(set, props);
         position = iso ?
             // Isometric position
             [
@@ -20447,20 +20449,20 @@ gf.TiledTileset = function(settings) {
      */
     this.textures = [];
 
-    //ensure hitArea is an array of points
-    if(this.properties.tileHitArea) {
-        var h = this.properties.tileHitArea.split(gf.utils._arrayDelim);
+    //ensure hitArea is a polygon
+    if(this.properties.hitArea) {
+        var h = this.properties.hitArea.split(gf.utils._arrayDelim);
 
         //odd number of values
         if(h.length % 2 !== 0) {
-            throw 'Uneven number of values for tileHitArea on tileset! Should be a flat array of x/y values.';
+            throw 'Uneven number of values for hitArea on tileset! Should be a flat array of x/y values.';
         }
 
         var hv = [];
         for(var i = 0, il = h.length; i < il; ++i) {
             hv.push(parseFloat(h[i], 10));
         }
-        this.properties.tileHitArea = new gf.Polygon(hv);
+        this.properties.hitArea = new gf.Polygon(hv);
     }
 
     //massage tile properties
@@ -20618,23 +20620,46 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                 interactive,
                 obj;
 
-            //define a hitArea
-            if(o.polyline)
-                props.hitArea = this._getPolyline(o);
-            else if(o.polygon)
-                props.hitArea = this._getPolygon(o);
-            else if(o.ellipse)
-                props.hitArea = this._getEllipse(o);
-            else
-                props.hitArea = this._getRectangle(o);
-
             //create a sprite with that texture
             if(o.gid) {
+                //check for a custom object hitArea
+                if(props.hitArea) {
+                    var h = props.hitArea.split(gf.utils._arrayDelim);
+
+                    //odd number of values
+                    if(h.length % 2 !== 0) {
+                        throw 'Uneven number of values for hitArea on Tiled Object! Should be a flat array of x/y values.';
+                    }
+
+                    var hv = [];
+                    for(var x = 0, xl = h.length; x < xl; ++x) {
+                        hv.push(parseFloat(h[x], 10));
+                    }
+                    props.hitArea = new gf.Polygon(hv);
+                }
+
                 set = this.parent.getTileset(o.gid);
 
                 if(set) {
                     props.texture = set.getTileTexture(o.gid);
+
+                    //if no hitArea then use the tileset's if available
+                    if(!props.hitArea) {
+                        props.hitArea = set.properties.hitArea;
+                    }
                 }
+            }
+            //non-sprite object (usually to define an "area" on a map)
+            else {
+                //define a hitArea
+                if(o.polyline)
+                    props.hitArea = this._getPolyline(o);
+                else if(o.polygon)
+                    props.hitArea = this._getPolygon(o);
+                else if(o.ellipse)
+                    props.hitArea = this._getEllipse(o);
+                else
+                    props.hitArea = this._getRectangle(o);
             }
 
             //a manually specified string texture

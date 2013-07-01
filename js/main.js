@@ -22,8 +22,10 @@ require([
                     state.loadWorld(w);
 
                     //for interactive maps
-                    state.world.on('tile_mouseover', tileOver);
-                    state.world.on('tile_mouseout', tileOut);
+                    state.world.on('tile.mouseover', tileOver);
+                    state.world.on('tile.mouseout', tileOut);
+                    state.world.on('object.mouseover', objOver);
+                    state.world.on('object.mouseout', objOut);
 
                     $('<option/>', {
                         value: w,
@@ -46,5 +48,13 @@ require([
 
     function tileOut(e) {
         e.tile.alpha = 1.0;
+    }
+
+    function objOver(e) {
+        e.object.alpha = 0.5;
+    }
+
+    function objOut(e) {
+        e.object.alpha = 1.0;
     }
 });
