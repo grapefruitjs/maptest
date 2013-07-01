@@ -17,7 +17,8 @@ require([
                 var $sw = $('#switch');
                 //create a game state for each of the worlds
                 data.worlds.forEach(function(w) {
-                    var state = new gf.GameState(game, w);
+                    var state = new gf.GameState(w);
+                    game.addState(state);
                     state.loadWorld(w);
 
                     //for interactive maps

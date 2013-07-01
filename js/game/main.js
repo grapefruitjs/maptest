@@ -16,7 +16,9 @@ define([
             gravity: obj.gravity || 0,
             friction: obj.friction || 0,
             width: $game.width(),
-            height: $game.height()
+            height: $game.height(),
+            background: 0x808080,
+            renderMethod: 'canvas'
         });
 
         game.loader.on('progress', function(evt) {
