@@ -24,8 +24,10 @@ require([
                     //for interactive maps
                     state.world.on('tile.mouseover', tileOver);
                     state.world.on('tile.mouseout', tileOut);
-                    state.world.on('object.mouseover', objOver);
-                    state.world.on('object.mouseout', objOut);
+
+                    state.world.on('object.mousedown', objDown);
+                    state.world.on('object.mouseup', objUp);
+                    state.world.on('object.mousemove', objMove);
 
                     $('<option/>', {
                         value: w,
@@ -42,19 +44,52 @@ require([
         });
     });
 
+    var dragging = null;
+
     function tileOver(e) {
         e.tile.alpha = 0.5;
+
+        if(dragging) {
+            dragging.setPosition(
+                //have to add 1/2 width to X because the anchor for an object is
+                //at the bottom-center, but it is bottom-left for tiles
+                e.tile.position.x + ((dragging.width || dragging.frame.width) / 2),
+                e.tile.position.y
+            );
+        }
     }
 
     function tileOut(e) {
         e.tile.alpha = 1.0;
     }
 
-    function objOver(e) {
+    function objDown(e) {
         e.object.alpha = 0.5;
+        //e.object.drag = e.data.getLocalPosition(e.object.parent);
+        dragging = e.object;
     }
 
-    function objOut(e) {
+    function objUp(e) {
         e.object.alpha = 1.0;
+        //e.object.drag = null;
+        dragging = null;
+    }
+
+    function objMove(e) {
+        /* If I didn't want to do the tile snapping I'm doing above:
+
+        if(e.object.drag) {
+            var pos = e.data.getLocalPosition(e.object.parent),
+                dx = (pos.x - e.object.drag.x),
+                dy = (pos.y - e.object.drag.y);
+
+            e.object.setPosition(
+                e.object.position.x + dx,
+                e.object.position.y + dy
+            );
+
+            e.object.drag = pos;
+        }
+        */
     }
 });
