@@ -4,7 +4,7 @@
  * Copyright (c) 2012, Chad Engler
  * https://github.com/englercj/grapefruit
  *
- * Compiled: 2013-07-01
+ * Compiled: 2013-07-02
  *
  * GrapeFruit Game Engine is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -19868,11 +19868,6 @@ gf.TiledMap = function(map) {
         switch(map.layers[i].type) {
             case 'tilelayer':
                 lyr = new gf.TiledLayer(map.layers[i]);
-
-                //due to the fact that we use top-left anchors for everything, but tiled uses bottom-left
-                //we need to move the position of the map down by a single tile
-                lyr.position.y += this.tileSize.y;
-
                 break;
 
             case 'objectgroup':
@@ -20129,6 +20124,11 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
                 (toTileY * this.parent.tileSize.y) + set.tileoffset.y
             ];
 
+        //due to the fact that we use top-left anchors for everything, but tiled uses bottom-left
+        //we need to move the position of each tile down by a single map-tile height. That is why
+        //there is an addition of "this.parent.tileSize.y" to the coords
+        position[1] +=  this.parent.tileSize.y;
+
         //if there is one to move in the map, lets just move it
         if(this.tiles[fromTileX] && this.tiles[fromTileX][fromTileY]) {
             tile = this.tiles[fromTileX][fromTileY];
@@ -20153,6 +20153,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
 
         tile.setTexture(texture);
         tile.setPosition(position[0], position[1]);
+
         tile.setInteractive(interactive);
 
         tile.collisionType = props.type;

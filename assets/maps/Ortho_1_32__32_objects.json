@@ -82,7 +82,7 @@
                 {
                  "gid":4,
                  "height":0,
-                 "name":"",
+                 "name":"derp",
                  "properties":
                     {
 
@@ -923,7 +923,7 @@
  "orientation":"orthogonal",
  "properties":
     {
-
+     "interactive":"true"
     },
  "tileheight":32,
  "tilesets":[

@@ -24,6 +24,7 @@ require([
                     //for interactive maps
                     state.world.on('tile.mouseover', tileOver);
                     state.world.on('tile.mouseout', tileOut);
+                    state.world.on('tile.mousedown', tileDown);
 
                     state.world.on('object.mousedown', objDown);
                     state.world.on('object.mouseup', objUp);
@@ -52,8 +53,8 @@ require([
         if(dragging) {
             dragging.setPosition(
                 //have to add 1/2 width to X because the anchor for an object is
-                //at the bottom-center, but it is bottom-left for tiles
-                e.tile.position.x + ((dragging.width || dragging.frame.width) / 2),
+                //at the bottom-center for isometric, but it is bottom-left for tiles
+                e.tile.position.x + (GAME.world.orientation === 'isometric' ? ((dragging.width || dragging.frame.width) / 2) : 0),
                 e.tile.position.y
             );
         }
@@ -61,6 +62,10 @@ require([
 
     function tileOut(e) {
         e.tile.alpha = 1.0;
+    }
+
+    function tileDown(e) {
+        console.log(e.tile);
     }
 
     function objDown(e) {
