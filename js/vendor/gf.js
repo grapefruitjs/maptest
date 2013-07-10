@@ -4,7 +4,7 @@
  * Copyright (c) 2012, Chad Engler
  * https://github.com/englercj/grapefruit
  *
- * Compiled: 2013-07-02
+ * Compiled: 2013-07-09
  *
  * GrapeFruit Game Engine is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -15240,6 +15240,7 @@ SimpleMotor.prototype.getImpulse = function()
 
 })();
 
+!function(e){if(typeof module==="object"&&module.exports===e)e=module.exports=O;e.SEMVER_SPEC_VERSION="2.0.0";var r=e.re=[];var t=e.src=[];var n=0;var i=n++;t[i]="0|[1-9]\\d*";var s=n++;t[s]="[0-9]+";var o=n++;t[o]="\\d*[a-zA-Z-][a-zA-Z0-9-]*";var a=n++;t[a]="("+t[i]+")\\."+"("+t[i]+")\\."+"("+t[i]+")";var u=n++;t[u]="("+t[s]+")\\."+"("+t[s]+")\\."+"("+t[s]+")";var f=n++;t[f]="(?:"+t[i]+"|"+t[o]+")";var c=n++;t[c]="(?:"+t[s]+"|"+t[o]+")";var l=n++;t[l]="(?:-("+t[f]+"(?:\\."+t[f]+")*))";var p=n++;t[p]="(?:-?("+t[c]+"(?:\\."+t[c]+")*))";var h=n++;t[h]="[0-9A-Za-z-]+";var v=n++;t[v]="(?:\\+("+t[h]+"(?:\\."+t[h]+")*))";var m=n++;var g="v?"+t[a]+t[l]+"?"+t[v]+"?";t[m]="^"+g+"$";var d="[v=\\s]*"+t[u]+t[p]+"?"+t[v]+"?";var w=n++;t[w]="^"+d+"$";var y=n++;t[y]="((?:<|>)?=?)";var $=n++;t[$]=t[s]+"|x|X|\\*";var j=n++;t[j]=t[i]+"|x|X|\\*";var b=n++;t[b]="[v=\\s]*("+t[j]+")"+"(?:\\.("+t[j]+")"+"(?:\\.("+t[j]+")"+"(?:("+t[l]+")"+")?)?)?";var S=n++;t[S]="[v=\\s]*("+t[$]+")"+"(?:\\.("+t[$]+")"+"(?:\\.("+t[$]+")"+"(?:("+t[p]+")"+")?)?)?";var E=n++;t[E]="^"+t[y]+"\\s*"+t[b]+"$";var k=n++;t[k]="^"+t[y]+"\\s*"+t[S]+"$";var x=n++;t[x]="(?:~>?)";var R=n++;t[R]=t[x]+"s+";var V="$1";var I=n++;t[I]="^"+t[x]+t[b]+"$";var C=n++;t[C]="^"+t[x]+t[S]+"$";var A=n++;t[A]="^"+t[y]+"\\s*("+d+")$|^$";var T=n++;t[T]="^"+t[y]+"\\s*("+g+")$|^$";var z=n++;t[z]=t[y]+"\\s*("+d+"|"+t[b]+")";r[z]=new RegExp(t[z],"g");var M="$1$2 ";var P=n++;t[P]="^\\s*("+t[b]+")"+"\\s+-\\s+"+"("+t[b]+")"+"\\s*$";var Z=n++;t[Z]="^\\s*("+t[S]+")"+"\\s+-\\s+"+"("+t[S]+")"+"\\s*$";var q=n++;t[q]="(<|>)?=?\\s*\\*";for(var L=0;L<n;L++){if(!r[L])r[L]=new RegExp(t[L])}e.parse=X;function X(e,t){var n=t?r[w]:r[m];return n.test(e)?new O(e,t):null}e.valid=_;function _(e,r){var t=X(e,r);return t?t.version:null}e.clean=N;function N(e,r){var t=X(e,r);return t?t.version:null}e.SemVer=O;function O(e,t){if(e instanceof O){if(e.loose===t)return e;else e=e.version}if(!(this instanceof O))return new O(e,t);this.loose=t;var n=e.trim().match(t?r[w]:r[m]);if(!n)throw new TypeError("Invalid Version: "+e);this.raw=e;this.major=+n[1];this.minor=+n[2];this.patch=+n[3];if(!n[4])this.prerelease=[];else this.prerelease=n[4].split(".").map(function(e){return/^[0-9]+$/.test(e)?+e:e});this.build=n[5]?n[5].split("."):[];this.format()}O.prototype.format=function(){this.version=this.major+"."+this.minor+"."+this.patch;if(this.prerelease.length)this.version+="-"+this.prerelease.join(".");return this.version};O.prototype.inspect=function(){return'<SemVer "'+this+'">'};O.prototype.toString=function(){return this.version};O.prototype.compare=function(e){if(!(e instanceof O))e=new O(e,this.loose);return this.compareMain(e)||this.comparePre(e)};O.prototype.compareMain=function(e){if(!(e instanceof O))e=new O(e,this.loose);return F(this.major,e.major)||F(this.minor,e.minor)||F(this.patch,e.patch)};O.prototype.comparePre=function(e){if(!(e instanceof O))e=new O(e,this.loose);if(this.prerelease.length&&!e.prerelease.length)return-1;else if(!this.prerelease.length&&e.prerelease.length)return 1;else if(!this.prerelease.lenth&&!e.prerelease.length)return 0;var r=0;do{var t=this.prerelease[r];var n=e.prerelease[r];if(t===undefined&&n===undefined)return 0;else if(n===undefined)return 1;else if(t===undefined)return-1;else if(t===n)continue;else return F(t,n)}while(++r)};O.prototype.inc=function(e){switch(e){case"major":this.major++;this.minor=-1;case"minor":this.minor++;this.patch=-1;case"patch":this.patch++;this.prerelease=[];break;case"prerelease":if(this.prerelease.length===0)this.prerelease=[0];else{var r=this.prerelease.length;while(--r>=0){if(typeof this.prerelease[r]==="number"){this.prerelease[r]++;r=-2}}if(r===-1)this.prerelease.push(0)}break;default:throw new Error("invalid increment argument: "+e)}this.format();return this};e.inc=B;function B(e,r,t){try{return new O(e,t).inc(r).version}catch(n){return null}}e.compareIdentifiers=F;var D=/^[0-9]+$/;function F(e,r){var t=D.test(e);var n=D.test(r);if(t&&n){e=+e;r=+r}return t&&!n?-1:n&&!t?1:e<r?-1:e>r?1:0}e.rcompareIdentifiers=G;function G(e,r){return F(r,e)}e.compare=H;function H(e,r,t){return new O(e,t).compare(r)}e.compareLoose=J;function J(e,r){return H(e,r,true)}e.rcompare=K;function K(e,r,t){return H(r,e,t)}e.sort=Q;function Q(r,t){return r.sort(function(r,n){return e.compare(r,n,t)})}e.rsort=U;function U(r,t){return r.sort(function(r,n){return e.rcompare(r,n,t)})}e.gt=W;function W(e,r,t){return H(e,r,t)>0}e.lt=Y;function Y(e,r,t){return H(e,r,t)<0}e.eq=er;function er(e,r,t){return H(e,r,t)===0}e.neq=rr;function rr(e,r,t){return H(e,r,t)!==0}e.gte=tr;function tr(e,r,t){return H(e,r,t)>=0}e.lte=nr;function nr(e,r,t){return H(e,r,t)<=0}e.cmp=ir;function ir(e,r,t,n){var i;switch(r){case"===":i=e===t;break;case"!==":i=e!==t;break;case"":case"=":case"==":i=er(e,t,n);break;case"!=":i=rr(e,t,n);break;case">":i=W(e,t,n);break;case">=":i=tr(e,t,n);break;case"<":i=Y(e,t,n);break;case"<=":i=nr(e,t,n);break;default:throw new TypeError("Invalid operator: "+r)}return i}e.Comparator=sr;function sr(e,r){if(e instanceof sr){if(e.loose===r)return e;else e=e.value}if(!(this instanceof sr))return new sr(e,r);this.loose=r;this.parse(e);if(this.semver===or)this.value="";else this.value=this.operator+this.semver.version}var or={};sr.prototype.parse=function(e){var t=this.loose?r[A]:r[T];var n=e.match(t);if(!n)throw new TypeError("Invalid comparator: "+e);this.operator=n[1];if(!n[2])this.semver=or;else{this.semver=new O(n[2],this.loose);if(this.operator==="<"&&!this.semver.prerelease.length){this.semver.prerelease=["0"];this.semver.format()}}};sr.prototype.inspect=function(){return'<SemVer Comparator "'+this+'">'};sr.prototype.toString=function(){return this.value};sr.prototype.test=function(e){return this.semver===or?true:ir(e,this.operator,this.semver,this.loose)};e.Range=ar;function ar(e,r){if(e instanceof ar&&e.loose===r)return e;if(!(this instanceof ar))return new ar(e,r);this.loose=r;this.raw=e;this.set=e.split(/\s*\|\|\s*/).map(function(e){return this.parseRange(e.trim())},this).filter(function(e){return e.length});if(!this.set.length){throw new TypeError("Invalid SemVer Range: "+e)}this.format()}ar.prototype.inspect=function(){return'<SemVer Range "'+this.range+'">'};ar.prototype.format=function(){this.range=this.set.map(function(e){return e.join(" ").trim()}).join("||").trim();return this.range};ar.prototype.toString=function(){return this.range};ar.prototype.parseRange=function(e){var t=this.loose;e=e.trim();var n=t?r[Z]:r[P];e=e.replace(n,gr);e=e.replace(r[z],M);e=e.replace(r[R],V);e=e.split(/\s+/).join(" ");var i=t?r[A]:r[T];var s=e.split(" ").map(function(e){return fr(e,t)}).join(" ").split(/\s+/);if(this.loose){s=s.filter(function(e){return!!e.match(i)})}s=s.map(function(e){return new sr(e,t)});return s};e.toComparators=ur;function ur(e,r){return new ar(e,r).set.map(function(e){return e.map(function(e){return e.value}).join(" ").trim().split(" ")})}function fr(e,r){e=lr(e,r);e=hr(e,r);e=mr(e,r);return e}function cr(e){return!e||e.toLowerCase()==="x"||e==="*"}function lr(e,r){return e.trim().split(/\s+/).map(function(e){return pr(e,r)}).join(" ")}function pr(e,t){var n=t?r[C]:r[I];return e.replace(n,function(e,r,t,n,i){var s;if(cr(r))s="";else if(cr(t))s=">="+r+".0.0-0 <"+(+r+1)+".0.0-0";else if(cr(n))s=">="+r+"."+t+".0-0 <"+r+"."+(+t+1)+".0-0";else if(i){if(i.charAt(0)!=="-")i="-"+i;s=">="+r+"."+t+"."+n+i+" <"+r+"."+(+t+1)+".0-0"}else s=">="+r+"."+t+"."+n+"-0"+" <"+r+"."+(+t+1)+".0-0";return s})}function hr(e,r){return e.split(/\s+/).map(function(e){return vr(e,r)}).join(" ")}function vr(e,t){e=e.trim();var n=t?r[k]:r[E];return e.replace(n,function(e,r,t,n,i,s){var o=cr(t);var a=o||cr(n);var u=a||cr(i);var f=u;if(r==="="&&f)r="";if(r&&f){if(o)t=0;if(a)n=0;if(u)i=0;if(r===">"){r=">=";if(o){}else if(a){t=+t+1;n=0;i=0}else if(u){n=+n+1;i=0}}e=r+t+"."+n+"."+i+"-0"}else if(o){e="*"}else if(a){e=">="+t+".0.0-0 <"+(+t+1)+".0.0-0"}else if(u){e=">="+t+"."+n+".0-0 <"+t+"."+(+n+1)+".0-0"}return e})}function mr(e,t){return e.trim().replace(r[q],"")}function gr(e,r,t,n,i,s,o,a,u,f,c,l,p){if(cr(t))r="";else if(cr(n))r=">="+t+".0.0-0";else if(cr(i))r=">="+t+"."+n+".0-0";else r=">="+r;if(cr(u))a="";else if(cr(f))a="<"+(+u+1)+".0.0-0";else if(cr(c))a="<"+u+"."+(+f+1)+".0-0";else if(l)a="<="+u+"."+f+"."+c+"-"+l;else a="<="+a;return(r+" "+a).trim()}ar.prototype.test=function(e){if(!e)return false;for(var r=0;r<this.set.length;r++){if(dr(this.set[r],e))return true}return false};function dr(e,r){for(var t=0;t<e.length;t++){if(!e[t].test(r))return false}return true}e.satisfies=wr;function wr(e,r,t){try{r=new ar(r,t)}catch(n){return false}return r.test(e)}e.maxSatisfying=yr;function yr(e,r,t){return e.filter(function(e){return wr(e,r,t)}).sort(H)[0]||null}e.validRange=$r;function $r(e,r){try{return new ar(e,r).range||"*"}catch(t){return null}}if(typeof define==="function"&&define.amd)define(e)}(typeof exports==="object"?exports:typeof define==="function"&&define.amd?{}:semver={});
 /**
 * @license GrapeFruit Game Engine
 * Copyright (c) 2012, Chad Engler
@@ -15607,7 +15608,7 @@ gf.AudioManager = function() {
 
     //if we are using web audio, we need a master gain node
     if(gf.support.webAudio) {
-        this.masterGain = this.ctx.createGain ? this.ctx.createGainNode() : this.ctx.createGain();
+        this.masterGain = this.ctx.createGain ? this.ctx.createGain() : this.ctx.createGainNode();
         this.masterGain.gain.value = 1;
         this.masterGain.connect(this.ctx.destination);
     }
@@ -15731,8 +15732,10 @@ gf.inherits(gf.AudioManager, Object, {
  * <a href="https://github.com/goldfire/howler.js">Howler.js</a>
  *
  * @class AudoPlayer
+ * @uses Emitter
  * @constructor
  * @param manager {AudioManager} AudioManager instance for this audio player
+ * @param settings {Object} All the settings for this player instance
  */
 gf.AudioPlayer = function(manager, settings) {
     //mixin the Event Target methods
@@ -16210,9 +16213,23 @@ gf.inherits(gf.AudioPlayer, Object, {
             this._doFadeStep(vol, wait, to, id, cb);
         }
     },
+    /**
+     * Returns the current volume of the player
+     *
+     * @method getVolume
+     * @return {Number} The current volume
+     */
     getVolume: function() {
         return this._volume;
     },
+    /**
+     * Sets the current volume of the player
+     *
+     * @method setVolume
+     * @param vol {Number} The current volume
+     * @param id {String} (optional) The play instance ID.
+     * @return {AudioPlayer}
+     */
     setVolume: function(vol, id) {
         var self = this;
 
@@ -16701,6 +16718,11 @@ gf.DisplayObjectContainer = function(settings) {
 };
 
 gf.inherits(gf.DisplayObjectContainer, PIXI.DisplayObjectContainer, {
+    /**
+     * Base resize function, all this does is ensure that all children resize functions get called as well
+     *
+     * @method resize
+     */
     resize: function() {
         for(var i = 0, il = this.children.length; i < il; ++i) {
             var o = this.children[i];
@@ -16754,6 +16776,7 @@ gf.inherits(gf.DisplayObjectContainer, PIXI.DisplayObjectContainer, {
  *
  * @class Sprite
  * @extends PIXI.Sprite
+ * @uses Emitter
  * @constructor
  * @param texture {Texture} The texture to set the sprite to
  * @param pos {Array|Vector|Point|Number} The starting position of the sprite
@@ -16885,13 +16908,99 @@ gf.Sprite.TYPE = {
     COLLECTABLE: 'collectable',
     TILE: 'tile'
 };
+
+//Add event echos
+['click', 'mousedown', 'mouseup', 'mouseupoutside', 'mouseover', 'mouseout', 'tap', 'touchstart', 'touchend', 'touchendoutside', 'mousemove'].forEach(function(evtname) {
+    gf.Sprite.prototype[evtname] = function(e) {
+        this.emit(evtname, e);
+    };
+});
+
+/*
+ * MOUSE Callbacks
+ */
+
+/**
+ * A callback that is used when the users clicks on the sprite with their mouse
+ * @event click
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user clicks the mouse down over the sprite
+ * @event mousedown
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user releases the mouse that was over the sprite
+ * for this callback to be fired the mouse must have been pressed down over the sprite
+ * @event mouseup
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user releases the mouse that was over the sprite but is no longer over the sprite
+ * for this callback to be fired, The touch must have started over the sprite
+ * @event mouseupoutside
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the users mouse rolls over the sprite
+ * @event mouseover
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the users mouse leaves the sprite
+ * @event mouseout
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user moves the mouse while over the sprite
+ * @event mousemove
+ * @param interactionData {InteractionData}
+ */
+
+
+/*
+ * TOUCH Callbacks
+ */
+
+/**
+ * A callback that is used when the users taps on the sprite with their finger
+ * basically a touch version of click
+ * @event tap
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user touch's over the displayObject
+ * @event touchstart
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user releases a touch over the displayObject
+ * @event touchend
+ * @param interactionData {InteractionData}
+ */
+
+/**
+ * A callback that is used when the user releases the touch that was over the displayObject
+ * for this callback to be fired, The touch must have started over the sprite
+ * @event touchendoutside
+ * @param interactionData {InteractionData}
+ */
 /**
  * The base AnimatedSprite class
  * @class AnimatedSprite
  * @extends Sprite
  * @constructor
- * @param animations {Object} An object of the form <code>{ animationName: [frame1, frame2] }</code> or you can also specify overrides on a per-animation basis:
- *      <code>{ animationName: { frames: [frame1, frame2], speed: 2 } }. Each frame is a Texture object
+ * @param animations {Object} An object of the form `{ animationName: [frame1, frame2] }` or you can also specify overrides on a per-animation basis:
+ *      `{ animationName: { frames: [frame1, frame2], speed: 2 } }`. Each frame is a Texture object
  * @param speed {Number} The speed of the animations (can be overriden on a specific animations)
  * @param start {String} The animation to start with, defaults to the first found key otherwise
  */
@@ -17537,6 +17646,12 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
     }
 });
 
+/**
+ * Camera follow types (used for camera.follow())
+ *
+ * @property FOLLOW
+ * @type Object
+ */
 gf.Camera.FOLLOW = {
     PLATFORMER: 0,
     TOPDOWN: 1,
@@ -17544,6 +17659,12 @@ gf.Camera.FOLLOW = {
     LOCKON: 3
 };
 
+/**
+ * Camera shake directions (used for camera.shake())
+ *
+ * @property SHAKE
+ * @type Object
+ */
 gf.Camera.SHAKE = {
     BOTH: 0,
     HORIZONTAL: 1,
@@ -17706,6 +17827,7 @@ gf.inherits(gf.TextureFont, gf.Font, {
  * Main game object, controls the entire instance of the game
  *
  * @class Game
+ * @uses Emitter
  * @constructor
  * @param contId {String} The container for the new canvas we will create for the game
  * @param settings {Object} Options such as renderMethod and interactive (whether the stage can be clicked)
@@ -17725,9 +17847,6 @@ gf.Game = function(contId, settings) {
 
     if(!this.container)
         this.container = document.body;
-
-    var w = settings.width || gf.utils.getStyle(this.container, 'width'),
-        h = settings.height || gf.utils.getStyle(this.container, 'height');
 
     /**
      * The method used to render values to the screen (either webgl, or canvas)
@@ -17794,9 +17913,9 @@ gf.Game = function(contId, settings) {
 
     //initialize the correct renderer
     if(this.renderMethod === 'webgl') {
-        this.renderer = new PIXI.WebGLRenderer(w, h, settings.view, settings.transparent);
+        this.renderer = new PIXI.WebGLRenderer(settings.width, settings.height, settings.view, settings.transparent);
     } else if(this.renderMethod === 'canvas') {
-        this.renderer = new PIXI.CanvasRenderer(w, h, settings.view, settings.transparent);
+        this.renderer = new PIXI.CanvasRenderer(settings.width, settings.height, settings.view, settings.transparent);
     }
 
     /**
@@ -17964,6 +18083,13 @@ gf.inherits(gf.Game, Object, {
 
         return this;
     },
+    /**
+     * Adds a new game state to this game to be later enabled
+     *
+     * @method addState
+     * @param state {GameState} The state to add to this game
+     * @return {Game} Returns itself for chainability
+     */
     addState: function(state) {
         var name = state.name;
 
@@ -17977,7 +18103,16 @@ gf.inherits(gf.Game, Object, {
 
             state.game = this;
         }
+
+        return this;
     },
+    /**
+     * Removes a game state from the game
+     *
+     * @method removeState
+     * @param state {GameState|String} The state to remove from the game, or the name of a state to remove
+     * @return {Game} Returns itself for chainability
+     */
     removeState: function(state) {
         var name = (typeof state === 'string') ? state : state.name;
 
@@ -17996,7 +18131,16 @@ gf.inherits(gf.Game, Object, {
 
             delete this.states[name];
         }
+
+        return this;
     },
+    /**
+     * Enables a state that has been added to the game
+     *
+     * @method enableState
+     * @param state {GameState|String} The state to enable, or the name of a state to enable
+     * @return {Game} Returns itself for chainability
+     */
     enableState: function(state) {
         var name = (typeof state === 'string') ? state : state.name;
 
@@ -18006,6 +18150,8 @@ gf.inherits(gf.Game, Object, {
         this.activeState = this.states[name];
 
         this.activeState.enable();
+
+        return this;
     },
     /**
      * Loads the world map into the game
@@ -18213,15 +18359,13 @@ gf.inherits(gf.GameState, gf.DisplayObjectContainer, {
     }
 });
 /**
- * The base Gui that holds GuiItems to be presented as a Gui
+ * The base Gui that holds GuiItems to be added to the Camera
  *
  * @class Gui
  * @extends DisplayObject
  * @constructor
- * @param pos {Array|Vector|Point} The starting position of the sprite
- * @param settings {Object} Settings to override the defauls
  */
-gf.Gui = function(pos, settings) {
+gf.Gui = function(name) {
     /**
      * The name of the Gui
      *
@@ -18229,9 +18373,9 @@ gf.Gui = function(pos, settings) {
      * @type String
      * @default ''
      */
-    this.name = '';
+    this.name = name || '';
 
-    gf.DisplayObjectContainer.call(this, null, pos, settings);
+    gf.DisplayObjectContainer.call(this);
 };
 
 gf.inherits(gf.Gui, gf.DisplayObjectContainer);
@@ -18242,63 +18386,11 @@ gf.inherits(gf.Gui, gf.DisplayObjectContainer);
  * @class GuiItem
  * @extends Sprite
  * @constructor
- * @param pos {Array|Vector|Point} The starting position of the sprite
- * @param settings {Object} Settings to override the defauls
+ * @param texture {Texture} The texture to set the sprite to
  */
-gf.GuiItem = function(pos, settings) {
+gf.GuiItem = function(texture, interactive) {
     /**
-     * Whether or not the item needs an update
-     *
-     * @property dirty
-     * @type Boolean
-     * @default true
-     */
-    this.dirty = true;
-
-    //allow user to pass the sprite texture as "image" to a GuiItem.
-    settings.texture = settings.texture || settings.image;
-    gf.Sprite.call(this, null, pos, settings);
-};
-
-gf.inherits(gf.GuiItem, gf.Sprite, {
-});
-
-/**
- * The Hud that holds HudItems to be presented as a Hud
- *
- * @class Hud
- * @extends DisplayObject
- * @constructor
- * @param pos {Array|Vector|Point} The starting position of the sprite
- * @param settings {Object} Settings to override the defauls
- */
-gf.Hud = function(pos, settings) {
-    gf.Gui.call(this, pos, settings);
-};
-
-gf.inherits(gf.Hud, gf.Gui);
-
-/**
- * The base HudItem that represents an element of a hud on the screen.
- *
- * @class HudItem
- * @extends GuiItem
- * @constructor
- * @param pos {Array|Vector|Point} The starting position of the sprite
- * @param settings {Object} Settings to override the defauls
- */
-gf.HudItem = function(pos, settings) {
-    /**
-     * The value of the item
-     *
-     * @property name
-     * @type Mixed
-     * @default ''
-     */
-    this.value = '';
-
-    /**
-     * Sets whether or not you can drag the HudItem around
+     * Sets whether or not you can drag the GuiItem around
      *
      * @property draggable
      * @type Boolean
@@ -18307,94 +18399,49 @@ gf.HudItem = function(pos, settings) {
     this.draggable = false;
 
     /**
-     * [read only] Describes if the current item is being dragged or not
+     * [read only] Describes if the current item is being dragged or not, if it is this
+     * object will hold the last local position of the mouse (relative to this object's parent)
      *
      * @property dragging
-     * @type Boolean
+     * @type Object
      * @default false
      * @readOnly
      */
     this.dragging = false;
 
-    /**
-     * The font to use for text
-     *
-     * @property font
-     * @type Font
-     */
-    this.font = null;
-
-    gf.GuiItem.call(this, pos, settings);
-
-    /**
-     * The initial value of the item to reset to
-     *
-     * @property initialValue
-     * @type Mixed
-     */
-    this.initialValue = this.value;
-
-    if(this.font instanceof gf.Font)
-        this.addChild(this.font);
-    else {
-        this.font = new gf.Font();
-        this.addChild(this.font);
-    }
-
-    this.sprites = new gf.ObjectPool(PIXI.Sprite, this);
+    gf.Sprite.call(this, texture);
+    this.setInteractive(interactive);
 };
 
-gf.inherits(gf.HudItem, gf.GuiItem, {
-    /**
-     * Resets the value to the initialValue
-     *
-     * @method reset
-     * @return {HudItem} Returns itself for chainability
-     */
-    reset: function() {
-        return this.set(this.initialValue);
-    },
-    /**
-     * Sets the value of the item
-     *
-     * @method set
-     * @return {HudItem} Returns itself for chainability
-     */
-    set: function(val) {
-        this.font.setText(val);
-        this.value = val;
-        return this;
-    },
-
-    onDragStart: function() {},
-    onDragEnd: function() {},
-
-    click: function() {},
+gf.inherits(gf.GuiItem, gf.Sprite, {
     mousedown: function(e) {
-        if(!this.draggable) return;
+        gf.Sprite.prototype.mousedown.call(this, e);
 
-        this.dragging = {
-            x: e.clientX,
-            y: e.clientY
-        };
-        this.onDragStart(e);
+        if(!this.draggable)
+            return;
+
+        this.dragging = e.data.getLocalPosition(e.object.parent);
     },
     mouseup: function(e) {
+        gf.Sprite.prototype.mouseup.call(this, e);
+
         this.dragging = false;
-        this.onDragEnd(e);
     },
     mousemove: function(e) {
-        if(!this.draggable || !this.dragging) return;
+        gf.Sprite.prototype.mousemove.call(this, e);
 
-        var diffX = e.clientX - this.dragging.x,
-            diffY = e.clientY - this.dragging.y,
-            pos = gf.utils.getPosition(this.elm);
+        if(!this.draggable || !this.dragging)
+            return;
 
-        this.dragging.x = e.clientX;
-        this.dragging.y = e.clientY;
+        var pos = e.data.getLocalPosition(this.parent);
 
-        this.elm.style.top = pos.top + diffY;
-        this.elm.style.left = pos.left + diffX;
+        //current position + (new mouse position - old mouse position) == current position + mousemove delta
+        this.setPosition(
+            this.position.x + (pos.x - this.dragging.x),
+            this.position.y + (pos.y - this.dragging.y)
+        );
+
+        this.dragging = pos;
     }
 });
 
@@ -18407,7 +18454,7 @@ gf.InputManager = function(view) {
      */
     this.view = view;
 
-    this.mouse = new gf.input.Mouse(view);
+    //this.mouse = new gf.input.Mouse(view);
     this.keyboard = new gf.input.Keyboard(view);
     this.gamepad = new gf.input.Gamepad();
 };
@@ -18719,141 +18766,6 @@ gf.inherits(gf.input.Input, Object, {
         return this.status[action];
     }
 });
-gf.input.Mouse = function(view) {
-    gf.input.Input.call(this, view);
-
-    /**
-     * The current screen touches
-     *
-     * @property touches
-     * @type Array
-     * @readOnly
-     */
-    this.touches = [{ x: 0, y: 0 }];
-
-    /**
-     * The current position of the mouse
-     *
-     * @property position
-     * @type Point
-     * @readOnly
-     */
-    this.position = new gf.Point(0, 0);
-
-    /**
-     * The current position of the mouse
-     *
-     * @property position
-     * @type Point
-     * @readOnly
-     */
-    this.offset = gf.utils.getOffset(this.view);
-
-    //bind touch events
-    this.view.addEventListener('touchmove', this.onMouse.bind(this), false);
-    for(var t in gf.input.Mouse.TOUCH_EVENT) {
-        if(gf.input.Mouse.TOUCH_EVENT[t] === 'touchmove') return;
-        this.view.addEventListener(gf.input.Mouse.TOUCH_EVENT[t], this.onTouch.bind(this), false);
-    }
-
-    //Bind mouse events
-    document.addEventListener('mousewheel', this.onMouseWheel.bind(this), false); //needs to be document and check target?
-    for(var k in gf.input.Mouse.EVENT) {
-        var v = gf.input.Mouse.EVENT[k];
-        if(v === 'mousewheel') return;
-
-        this.view.addEventListener(v, this.onMouse.bind(this), false);
-    }
-};
-
-gf.inherits(gf.input.Mouse, gf.input.Input, {
-    //generic mouse event (click, down, up, mouve, touchmove, etc)
-    onMouse: function(e) {
-        this.updateCoords(e);
-
-        if(this.dispatchMouseEvent(e))
-            return this.preventDefault(e);
-
-        return true;
-    },
-    onMouseWheel: function(e) {
-        if(e.target === this.view)
-            if(this.dispatchMouseEvent(e))
-                return this.preventDefault(e);
-
-        return true;
-    },
-    //generic touch event (tap, start, end, etc)
-    onTouch: function(e) {
-        this.updateCoords(e);
-
-        return this.onMouse(e);
-    },
-    //update the mouse coords
-    updateCoords: function(e) {
-        this.touches.length = 0;
-
-        var off = this.offset;
-
-        //mouse event
-        if(!e.touches) {
-            this.touches.push({
-                x: e.pageX - off.left,
-                y: e.pageY - off.top,
-                id: 0
-            });
-        }
-        //touch event
-        else {
-            for(var i = 0, il = e.changedTouches.length; i < il; ++i) {
-                var t = e.changedTouches[i];
-
-                this.touches.push({
-                    x: t.clientX - off.left,
-                    y: t.clientY - off.top
-                });
-            }
-        }
-        this.position.x = this.touches[0].x;
-        this.position.y = this.touches[0].y;
-    },
-    dispatchMouseEvent: function(e) {
-        if(this.binds[e.type]) {
-            //track that action is active
-            this.status[this.binds[e.type]] = true;
-
-            //for each touch
-            if(this.callbacks[this.binds[e.type]]) {
-                for(var t = 0, tl = this.touches.length; t < tl; ++t) {
-                    this.runCallbacks(e.type, [this.touches[t]]);
-                }
-
-                return this.preventDefault(e);
-            }
-
-            return true;
-        }
-    }
-});
-
-gf.input.Mouse.EVENT = {
-    WHEEL: 'mousewheel',
-    MOVE: 'mousemove',
-    DOWN: 'mousedown',
-    UP: 'mouseup',
-    CLICK: 'click',
-    DBLCLICK: 'dblclick',
-    RCLICK: 'contextmenu',
-    CONTEXTMENU: 'contextmenu'
-};
-
-gf.input.Mouse.TOUCH_EVENT = {
-    MOVE: 'touchmove',
-    START: 'touchstart',
-    END: 'touchend',
-    TAP: 'tap',
-    DBLTAP: 'dbltap'
-};
 gf.input.Keyboard = function(view) {
     gf.input.Input.call(this, view);
 
@@ -19148,6 +19060,15 @@ gf.inherits(gf.input.GamepadSticks, gf.input.Input, {
         }
     }
 });
+/**
+ * The Base loader class that all other loaders inherit from
+ *
+ * @class Loader
+ * @uses Emitter
+ * @constructor
+ * @param name {String} The name of the resource to load, used as a key in the assetCache
+ * @param url {String} The url to load the resource from, also used as a key in the assetCache
+ */
 gf.Loader = function(name, url) {
     gf.Emitter.call(this);
 
@@ -19158,20 +19079,35 @@ gf.Loader = function(name, url) {
 };
 
 gf.inherits(gf.Loader, Object, {
+    /**
+     * Atempts to load a resource from the asset cache, if it finds the resource
+     * in the cache, it will return the value and asynchronously emit the 'load' event
+     *
+     * @method load
+     * @return {mixed} The cached value, or undefined if there is none cached
+     */
     load: function() {
         var self = this;
 
         if(gf.assetCache[this.name]) {
-            return setTimeout(function() {
+            setTimeout(function() {
                 self.done(gf.assetCache[self.name]);
             }, 0);
+            return gf.assetCache[this.name];
         }
         else if(gf.assetCache[this.url]) {
-            return setTimeout(function() {
+            setTimeout(function() {
                 self.done(gf.assetCache[self.url]);
             }, 0);
+            return gf.assetCache[this.url];
         }
     },
+    /**
+     * Emits the 'load' event, passing the properties of this instance and the data passed
+     *
+     * @method load
+     * @param data {mixed} The loaded data
+     */
     done: function(data) {
         gf.assetCache[this.name] = data;
 
@@ -19186,6 +19122,12 @@ gf.inherits(gf.Loader, Object, {
             });
         }, 0);
     },
+    /**
+     * Emits the 'error' event, passing the properties of this instance and the message passed
+     *
+     * @method error
+     * @param msg {String} The error message that occurred
+     */
     error: function(msg) {
         //be async for sure
         var self = this;
@@ -19205,6 +19147,7 @@ gf.inherits(gf.Loader, Object, {
  * and Spritesheet JSON files (published from <a href="http://www.codeandweb.com/texturepacker">Texture Packer</a>).
  *
  * @class AssetLoader
+ * @uses Emitter
  * @constructor
  * @param assets {Array} Array of assets to load when `.load()` is called
  * @example
@@ -19444,6 +19387,38 @@ gf.inherits(gf.JsonLoader, gf.Loader, {
         });
     }
 });
+/**
+ * Loads a texture image
+ *
+ * @class TextureLoader
+ * @constructor
+ */
+ gf.TextureLoader = function(name, url) {
+    gf.Loader.call(this, name, url);
+
+    this.type = 'texture';
+};
+
+gf.inherits(gf.TextureLoader, gf.Loader, {
+    load: function() {
+        //pull from cache
+        if(gf.Loader.prototype.load.call(this)) return;
+
+        var self = this,
+            texture = gf.Texture.fromImage(this.url);
+
+        if(!texture.baseTexture.hasLoaded) {
+            texture.baseTexture.on('loaded', function() {
+                self.done(texture);
+            });
+            texture.baseTexture.source.onerror = function() {
+                self.error('Unable to load texture');
+            };
+        } else {
+            this.done(texture);
+        }
+    }
+});
 gf.SpriteSheetLoader = function(name, baseUrl, data) {
     gf.Loader.call(this, name, baseUrl);
 
@@ -19491,38 +19466,6 @@ gf.inherits(gf.SpriteSheetLoader, gf.Loader, {
         });
 
         txLoader.load();
-    }
-});
-/**
- * Loads a texture image
- *
- * @class TextureLoader
- * @constructor
- */
- gf.TextureLoader = function(name, url) {
-    gf.Loader.call(this, name, url);
-
-    this.type = 'texture';
-};
-
-gf.inherits(gf.TextureLoader, gf.Loader, {
-    load: function() {
-        //pull from cache
-        if(gf.Loader.prototype.load.call(this)) return;
-
-        var self = this,
-            texture = gf.Texture.fromImage(this.url);
-
-        if(!texture.baseTexture.hasLoaded) {
-            texture.baseTexture.on('loaded', function() {
-                self.done(texture);
-            });
-            texture.baseTexture.source.onerror = function() {
-                self.error('Unable to load texture');
-            };
-        } else {
-            this.done(texture);
-        }
     }
 });
 gf.WorldLoader = function(name, baseUrl, data) {
@@ -19601,6 +19544,7 @@ gf.inherits(gf.WorldLoader, gf.Loader, {
  * Base Map implementation, provides common functions for all Map types
  *
  * @class Map
+ * @uses Emitter
  * @extends DisplayObject
  * @constructor
  * @param map {Object} All the settings for the map
@@ -19646,6 +19590,60 @@ gf.inherits(gf.Map, gf.DisplayObjectContainer, {
         }
     }
 });
+/**
+ * Base Tile implementation, a tile is a single tile in a tilemap layer
+ *
+ * @class Tile
+ * @extends Sprite
+ * @constructor
+ * @param tile {Object} All the settings for the tile
+ */
+gf.Tile = function(texture) {
+    this.collisionType = gf.Tile.TYPE.NONE;
+
+    //call base ctor
+    gf.Sprite.call(this, texture);
+
+    this.type = gf.Sprite.TYPE.TILE;
+};
+
+gf.inherits(gf.Tile, gf.Sprite, {
+    /**
+     * On Collision Event
+     *      called when this sprite collides into another, or is being collided into by another.
+     *      By default if something collides with a collectable sprite we remove the collectable
+     *      and if we collide with a solid tile we kill our velocity
+     *
+     * @method onCollision
+     * @param obj {Sprite} Colliding sprite
+     */
+    onCollision: function(obj) {
+        gf.Sprite.prototype.onCollision.call(this, obj);
+
+        //I did a switch-case here because I feel like I
+        //will be adding more defaults later
+        switch(this.collisionType) {
+            case gf.Tile.TYPE.SOLID:
+                obj.setVelocity(0);
+                break;
+        }
+    }
+});
+
+/**
+ * Tile collision types
+ *
+ * @property COLLISION
+ * @type Object
+ */
+gf.Tile.TYPE = {
+    NONE: 'none',
+    SOLID: 'solid',
+    CLIFF: 'cliff',
+    LADDER: 'ladder',
+    WATER: 'water',
+    DEEP_WATER: 'deep_water'
+};
 /**
  * Base Layer implementation, provides common functions for all Layer types
  *
@@ -19709,60 +19707,6 @@ gf.ImageLayer = function(layer) {
 };
 
 gf.inherits(gf.ImageLayer, gf.Layer);
-/**
- * Base Tile implementation, a tile is a single tile in a tilemap layer
- *
- * @class Tile
- * @extends Sprite
- * @constructor
- * @param tile {Object} All the settings for the tile
- */
-gf.Tile = function(texture) {
-    this.collisionType = gf.Tile.TYPE.NONE;
-
-    //call base ctor
-    gf.Sprite.call(this, texture);
-
-    this.type = gf.Sprite.TYPE.TILE;
-};
-
-gf.inherits(gf.Tile, gf.Sprite, {
-    /**
-     * On Collision Event
-     *      called when this sprite collides into another, or is being collided into by another.
-     *      By default if something collides with a collectable sprite we remove the collectable
-     *      and if we collide with a solid tile we kill our velocity
-     *
-     * @method onCollision
-     * @param obj {Sprite} Colliding sprite
-     */
-    onCollision: function(obj) {
-        gf.Sprite.prototype.onCollision.call(this, obj);
-
-        //I did a switch-case here because I feel like I
-        //will be adding more defaults later
-        switch(this.collisionType) {
-            case gf.Tile.TYPE.SOLID:
-                obj.setVelocity(0);
-                break;
-        }
-    }
-});
-
-/**
- * Tile collision types
- *
- * @property COLLISION
- * @type Object
- */
-gf.Tile.TYPE = {
-    NONE: 'none',
-    SOLID: 'solid',
-    CLIFF: 'cliff',
-    LADDER: 'ladder',
-    WATER: 'water',
-    DEEP_WATER: 'deep_water'
-};
 /**
  * Tiled map, expects a Tiled TMX file loaded by the gf.loader as the argument.
  * The loader knows to load all textures and other resources when loading a world TMX
@@ -19907,7 +19851,6 @@ gf.inherits(gf.TiledMap, gf.Map, {
      * Notifies the map it needs to resize, re renders the viewport
      *
      * @method resize
-     * @private
      */
     resize: function(width, height) {
         var numX = Math.ceil(width / this.scaledTileSize.x),
@@ -19926,6 +19869,11 @@ gf.inherits(gf.TiledMap, gf.Map, {
             }
         }
     },
+    /**
+     * Spawns all the objects in the TiledObjectGroups of this map
+     *
+     * @method spawnObjects
+     */
     spawnObjects: function() {
         for(var i = 0, il = this.children.length; i < il; ++i) {
             var o = this.children[i];
@@ -19935,6 +19883,16 @@ gf.inherits(gf.TiledMap, gf.Map, {
             }
         }
     },
+    /**
+     * Called by a TiledLayer when a tile event occurs. This is so you can listen for
+     * the emitted events on the world instead of the tile itself.
+     *
+     * @method onTileEvent
+     * @param eventName {String} The event name to emit, the prefix 'tile.' will be added to it
+     * @param tile {Tile} The tile that has the event
+     * @param data {InteractionData} The raw interaction object for the event
+     * @private
+     */
     onTileEvent: function(eventName, tile, data) {
         this.emit({
             type: 'tile.' + eventName,
@@ -19942,6 +19900,16 @@ gf.inherits(gf.TiledMap, gf.Map, {
             data: data
         });
     },
+    /**
+     * Called by a TiledObjectGroup when an object event occurs. This is so you can listen for
+     * the emitted events on the world instead of the tile itself.
+     *
+     * @method onObjectEvent
+     * @param eventName {String} The event name to emit, the prefix 'object.' will be added to it
+     * @param obj {Sprite|DisplayObjectContainer} The object that has the event
+     * @param data {InteractionData} The raw interaction object for the event
+     * @private
+     */
     onObjectEvent: function(eventName, obj, data) {
         this.emit({
             type: 'object.' + eventName,
@@ -19998,8 +19966,8 @@ gf.TiledLayer = function(layer) {
 
     this._tilePool = [];
     this._buffered = { left: false, right: false, top: false, bottom: false };
-    this._panDelta = new gf.Vector(0, 0);
-    this._rendered = new gf.Rectangle(0, 0, 0, 0);
+    this._panDelta = new gf.Vector();
+    this._rendered = new gf.Rectangle();
 };
 
 gf.inherits(gf.TiledLayer, gf.Layer, {
@@ -20019,6 +19987,9 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         //ensure we don't go below 0
         startX = startX < 0 ? 0 : startX;
         startY = startY < 0 ? 0 : startY;
+
+        if(this.parent.orientation === 'isometric')
+            return this._renderIsoTiles(startX, startY, numX, numY);
 
         //ensure we don't go outside the map size
         var endX = (startX + numX <= this.parent.size.x) ? startX + numX : (this.parent.size.x - startX);
@@ -20045,6 +20016,48 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         this._panDelta.x = this.parent.position.x % this.parent.scaledTileSize.x;
         this._panDelta.y = this.parent.position.y % this.parent.scaledTileSize.y;
     },
+    _renderIsoTiles: function(startX, startY, numX, numY) {
+        //use the start and num params (which describe the screen area) to determine
+        //the min (top-left) iso tile coord and the max (bottom-right) iso tile coord.
+        var min = new gf.Point(
+                ((startY / this.parent.tileSize.y) + (startX / this.parent.tileSize.x)) / 2,
+                ((startY / this.parent.tileSize.y) - (startX / this.parent.tileSize.x)) / 2
+            ),
+            max = new gf.Point(
+                (((startY + numY) / this.parent.tileSize.y) + ((startX + numX) / this.parent.tileSize.x)) / 2,
+                (((startY + numY) / this.parent.tileSize.y) - ((startX + numX) / this.parent.tileSize.x)) / 2
+            );
+
+        //loop from min to max for each
+        for(var a = min.y; a <= max.y; a++) {
+            for(var b = min.x; b <= max.x; b++) {
+                //if a and b are not both odd or both even, skip this iteration
+                if((a&1) !== (b&1)) continue;
+
+                //calculate the isometric coords
+                var x = (a + b) / 2,
+                    y = (a - b) / 2;
+
+                //if anyhting is negative, ignore it
+                if(x < 0 || y < 0) continue;
+
+                //render the tile
+                this.moveTileSprite(x, y, x, y);
+            }
+        }
+    },
+    _freeTile: function(tx, ty) {
+        if(this.tiles[tx] && this.tiles[tx][ty]) {
+            var t = this.tiles[tx][ty];
+
+            if(t) {
+                t.visible = false;
+                t.disablePhysics();
+                this._tilePool.push(t);
+                this.tiles[tx][ty] = null;
+            }
+        }
+    },
     /**
      * Clears all the tiles currently used to render the layer
      *
@@ -20054,21 +20067,8 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         //hide/free each tile and remove from the memory map
         for(var x in this.tiles) {
             for(var y in this.tiles[x]) {
-                var tile = this.tiles[x][y];
-
-                if(tile) {
-                    //hide/free the sprite
-                    tile.visible = false;
-                    tile.disablePhysics();
-                    this._tilePool.push(tile);
-                }
-
-                //remove the Y key
-                delete this.tiles[x][y];
+                this._freeTile(x, y);
             }
-
-            //keep the X key so we dont have to recreate these objects
-            //delete this.tiles[x];
         }
     },
     /**
@@ -20080,7 +20080,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
      * @param fromTileY {Number} The y coord of the tile in units of tiles (not pixels) to move from
      * @param toTileX {Number} The x coord of the tile in units of tiles (not pixels) to move to
      * @param toTileY {Number} The y coord of the tile in units of tiles (not pixels) to move to
-     * @return {PIXI.Sprite} The sprite to display
+     * @return {Tile} The sprite to display
      */
     moveTileSprite: function(fromTileX, fromTileY, toTileX, toTileY) {
         var tile,
@@ -20096,13 +20096,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
 
         //if no tileset, just ensure the "from" tile is put back in the pool
         if(!set) {
-            if(this.tiles[fromTileX] && this.tiles[fromTileX][fromTileY]) {
-                var t = this.tiles[fromTileX][fromTileY];
-                this.tiles[fromTileX][fromTileY] = null;
-
-                t.visible = false;
-                this._tilePool.push(t);
-            }
+            this._freeTile(fromTileX, fromTileY);
             return;
         }
 
@@ -20820,7 +20814,7 @@ gf.PhysicsSystem = function(options) {
     //These two collision scenarios are separate because we don't
     //want tiles to collide with tiles all the time
 
-    //sprity - sprity collisions
+    //sprite - sprite collisions
     this.space.addCollisionHandler(
         COLLISION_TYPE.SPRITE,
         COLLISION_TYPE.SPRITE,
@@ -20830,7 +20824,7 @@ gf.PhysicsSystem = function(options) {
         null //separate
     );
 
-    //sprity - tile collisions
+    //sprite - tile collisions
     this.space.addCollisionHandler(
         COLLISION_TYPE.SPRITE,
         COLLISION_TYPE.TILE,
@@ -21114,7 +21108,7 @@ gf.inherits(gf.SpritePool, Object, {
      *
      * @method ajax
      * @param settings {Object} The settings of the ajax request, similar to jQuery's ajax function
-     * @return {AjaxRequest} An XHR object
+     * @return {XMLHttpRequest|ActiveXObject} An XHR object
      */
     ajax: function(sets) {
         //base settings
@@ -21132,7 +21126,7 @@ gf.inherits(gf.SpritePool, Object, {
         sets.abort = sets.abort || gf.utils.noop;
         sets.complete = sets.complete || gf.utils.noop;
 
-        var xhr = new gf.utils.AjaxRequest();
+        var xhr = gf.utils.createAjaxRequest();
 
         xhr.onreadystatechange = function() {
             if(xhr.readyState === 4) {
@@ -21171,10 +21165,10 @@ gf.inherits(gf.SpritePool, Object, {
      * Wraps XMLHttpRequest in a cross-browser way.
      *
      * @method AjaxRequest
-     * @return {ActiveXObject|XMLHttpRequest}
+     * @return {XMLHttpRequest|ActiveXObject}
      */
     //from pixi.js
-    AjaxRequest: function() {
+    createAjaxRequest: function() {
         //activeX versions to check for in IE
         var activexmodes = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP'];
 
@@ -21276,68 +21270,7 @@ gf.inherits(gf.SpritePool, Object, {
         }
 
         return obj;
-    },
-    getStyle: function(elm, prop) {
-        var style = window.getComputedStyle(elm),
-            val = style.getPropertyValue(prop).replace(/px|em|%|pt/, '');
-
-        if(!isNaN(val))
-            val = parseInt(val, 10);
-
-        return val;
-    },
-    //Some things stolen from jQuery, used for mouse input
-    getOffset: function(elem) {
-        var doc = elem && elem.ownerDocument,
-            docElem = doc.documentElement,
-            box;
-
-        try {
-            box = elem.getBoundingClientRect();
-        } catch(e) {}
-
-        // Make sure we're not dealing with a disconnected DOM node
-        if (!box || !(docElem !== elem && (docElem.contains ? docElem.contains(elem) : true))) {  //(!box || !jQuery.contains(docElem, elem)) {
-            return box ? {
-                top: box.top,
-                left: box.left
-            } : {
-                top: 0,
-                left: 0
-            };
-        }
-
-        var body = doc.body,
-            win = window,
-            clientTop = docElem.clientTop || body.clientTop || 0,
-            clientLeft = docElem.clientLeft || body.clientLeft || 0,
-            scrollTop = win.pageYOffset || docElem.scrollTop || body.scrollTop,
-            scrollLeft = win.pageXOffset || docElem.scrollLeft || body.scrollLeft,
-            top = box.top + scrollTop - clientTop,
-            left = box.left + scrollLeft - clientLeft;
-
-        return {
-            top: top,
-            left: left
-        };
-    },
-    ////////////////////////////////////////////////////////////////////////////////
-    // DOM Manipulation stuff will be removed with the GUI rewrite
-    getPosition: function(o) {
-        var l = o.offsetLeft,
-            t = o.offsetTop;
-
-        while(!!(o = o.offsetParent)) {
-            l += o.offsetLeft;
-            t += o.offsetTop;
-        }
-
-        return {
-            top: t,
-            left: l
-        };
     }
-    /////////////////////////////////////////////////////////////////////////////
 };
 
 /**
@@ -21496,6 +21429,14 @@ gf.inherits(gf.SpritePool, Object, {
         //roll passed, return true
         return true;
     },
+    /**
+     * Returns a random int between min and max.
+     *
+     * @method randomInt
+     * @param min {Number} The minimun number that the result can be
+     * @param max {Number} The maximun number that the result can be
+     * @return {Number}
+     */
     randomInt: function(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     },
@@ -22033,9 +21974,42 @@ gf.inherits(gf.Vector, Object, {
     }
 });
 
-gf.Emitter = function() {
+/**
+ * Event emitter mixin. This will add emitter properties to an object
+ * so that it can emit events, and have others listen for them.
+ *
+ * @class Emitter
+ * @constructor
+ * @example
+ *      function MyObject(clr) {
+ *          gf.Emitter.call(this); //adds properties
+ *          this.color = clr;
+ *      }
+ *
+ *      gf.inherits(MyObject, Object, {
+ *          something: function(s) {
+ *              this.emit('hey', { some: s });
+ *          }
+ *      });
+ *
+ *      //then later
+ *      var o = new MyObject('red');
+ *      o.on('hey', function(e) {
+ *          console.log(this.color); //"this" refers to the instance, logs "red"
+ *          console.log(e.some); //e is the data passed to emit, logs "hello"
+ *      });
+ *      o.something('hello');
+ */
+ gf.Emitter = function() {
     var listeners = {};
 
+    /**
+     * Registers a listener function to be run on an event occurance
+     *
+     * @method on
+     * @param type {String} The event name to listen for
+     * @param listener {Function} The function to execute when the event happens
+     */
     this.addEventListener = this.on = function(type, listener) {
         if(listeners[type] === undefined) {
             listeners[type] = [];
@@ -22046,6 +22020,13 @@ gf.Emitter = function() {
         }
     };
 
+    /**
+     * Emits an event which will run all registered listeners for the event type
+     *
+     * @method emit
+     * @param type {String} The event name to emit
+     * @param data {mixed} Any data you want passed along with the event
+     */
     this.dispatchEvent = this.emit = function(type, data) {
         if(typeof type === 'object') {
             data = type;
@@ -22060,6 +22041,13 @@ gf.Emitter = function() {
         }
     };
 
+    /**
+     * Removes a listener function for an event type
+     *
+     * @method off
+     * @param type {String} The event name to emit
+     * @param listener {Function} The function to remove
+     */
     this.removeEventListener = this.off = function(type, listener) {
         var index = listeners[type].indexOf(listener);
 
