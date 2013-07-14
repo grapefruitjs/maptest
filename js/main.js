@@ -17,14 +17,15 @@ require([
                     fps: {
                         left: 'auto',
                         right: '5px',
-                        top: '65px'
+                        top: '85px'
                     },
                     gamepad: false
                 });
                 window.GAME = game;
 
                 var $sw = $('#switch'),
-                    $dirty = $('#dirty');
+                    $dirty = $('#dirty'),
+                    $fullscreen = $('#fullscreen');
 
                 //create a game state for each of the worlds
                 data.worlds.forEach(function(w) {
@@ -58,6 +59,10 @@ require([
 
                 $dirty.on('click', function() {
                     game.stage.dirty = true;
+                });
+
+                $fullscreen.on('click', function() {
+                    game.requestFullscreen();
                 });
             }
         });

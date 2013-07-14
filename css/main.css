@@ -7,14 +7,23 @@ html,body {
     height: 100%;
 }
 
-#switch {
+#switch,
+#dirty,
+#fullscreen {
     position: absolute;
+}
+
+#switch {
     top: 5px;
     right: 5px;
 }
 
 #dirty {
-    position: absolute;
     top: 30px;
+    right: 5px;
+}
+
+#fullscreen {
+    top: 57px;
     right: 5px;
 }
