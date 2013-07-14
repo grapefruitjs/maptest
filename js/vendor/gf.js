@@ -4,7 +4,7 @@
  * Copyright (c) 2012, Chad Engler
  * https://github.com/englercj/grapefruit
  *
- * Compiled: 2013-07-09
+ * Compiled: 2013-07-14
  *
  * GrapeFruit Game Engine is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -19825,13 +19825,6 @@ gf.TiledMap = function(map) {
 
         this.addChild(lyr);
     }
-
-    //rotate for isometric maps
-    this.offset = new gf.Point();
-    if(this.orientation === 'isometric') {
-        this.offset.x = (this.realSize.x / 2) - (this.tileSize.x / 2);
-        this.position.x += this.offset.x;
-    }
 };
 
 gf.inherits(gf.TiledMap, gf.Map, {
@@ -19853,19 +19846,11 @@ gf.inherits(gf.TiledMap, gf.Map, {
      * @method resize
      */
     resize: function(width, height) {
-        var numX = Math.ceil(width / this.scaledTileSize.x),
-            numY = Math.ceil(height / this.scaledTileSize.y);
-
         for(var i = 0, il = this.children.length; i < il; ++i) {
             var o = this.children[i];
 
             if(o instanceof gf.TiledLayer) {
-                o.renderTiles(
-                    Math.floor((Math.abs(this.position.x) - this.offset.x) / this.scaledTileSize.x),
-                    Math.floor((Math.abs(this.position.y) - this.offset.y) / this.scaledTileSize.y),
-                    numX,
-                    numY
-                );
+                o.resize(width, height);
             }
         }
     },
@@ -19974,39 +19959,67 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
     /**
      * Creates all the tile sprites needed to display the layer
      *
-     * @method renderTiles
-     * @param startX {Number} The starting x tile position
-     * @param startY {Number} The starting y tile position
-     * @param numX {Number} The number of tiles in the X direction to render
-     * @param numY {Number} The number of tiles in the Y direction to render
+     * @method resize
+     * @param width {Number} The number of tiles in the X direction to render
+     * @param height {Number} The number of tiles in the Y direction to render
      */
-    renderTiles: function(startX, startY, numX, numY) {
+    resize: function(width, height) {
         //clear all the visual tiles
         this.clearTiles();
+        //set rendered area
+        this._rendered.x = this.parent.position.x;
+        this._rendered.y = this.parent.position.y;
+        this._rendered.width = width;
+        this._rendered.height = height;
+        window.console.log(width, height);
 
+        if(this.parent.orientation === 'isometric') {
+            return this._renderIsoTiles(
+                this.parent.position.x,
+                this.parent.position.y,
+                width,
+                height
+            );
+        }
+        else {
+            return this._renderOrthoTiles(
+                -this.parent.position.x,
+                -this.parent.position.y,
+                width,
+                height
+            );
+        }
+    },
+    _renderOrthoTiles: function(sx, sy, sw, sh) {
+        //convert to tile coords
+        sx = Math.floor(sx / this.parent.scaledTileSize.x);
+        sy = Math.floor(sy / this.parent.scaledTileSize.y);
         //ensure we don't go below 0
-        startX = startX < 0 ? 0 : startX;
-        startY = startY < 0 ? 0 : startY;
+        sx = sx < 0 ? 0 : sx;
+        sy = sy < 0 ? 0 : sy;
 
-        if(this.parent.orientation === 'isometric')
-            return this._renderIsoTiles(startX, startY, numX, numY);
-
+        //convert to tile coords
+        sw = Math.ceil(sw / this.parent.scaledTileSize.x) + 1;
+        sh = Math.ceil(sh / this.parent.scaledTileSize.y) + 1;
         //ensure we don't go outside the map size
-        var endX = (startX + numX <= this.parent.size.x) ? startX + numX : (this.parent.size.x - startX);
-        var endY = (startY + numY <= this.parent.size.y) ? startY + numY : (this.parent.size.y - startY);
+        sw = (sx + sw > this.parent.size.x) ? (this.parent.size.x - sx) : sw;
+        sh = (sy + sh > this.parent.size.y) ? (this.parent.size.y - sy) : sh;
 
         //render new sprites
-        for(var x = startX; x < endX; ++x) {
-            for(var y = startY; y < endY; ++y) {
+        var endX = sx + sw,
+            endY = sy + sh;
+
+        for(var x = sx; x < endX; ++x) {
+            for(var y = sy; y < endY; ++y) {
                 this.moveTileSprite(x, y, x, y);
             }
         }
 
-        //set rendered area
-        this._rendered.x = startX;
-        this._rendered.y = startY;
-        this._rendered.width = endX - startX;
-        this._rendered.height = endY - startY;
+        /*//set rendered area
+        this._rendered.x = sx;
+        this._rendered.y = sy;
+        this._rendered.width = sw;
+        this._rendered.height = sh;
         this._updateRenderSq();
 
         //reset buffered status
@@ -20014,35 +20027,81 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
 
         //reset panDelta
         this._panDelta.x = this.parent.position.x % this.parent.scaledTileSize.x;
-        this._panDelta.y = this.parent.position.y % this.parent.scaledTileSize.y;
+        this._panDelta.y = this.parent.position.y % this.parent.scaledTileSize.y;*/
     },
-    _renderIsoTiles: function(startX, startY, numX, numY) {
-        //use the start and num params (which describe the screen area) to determine
-        //the min (top-left) iso tile coord and the max (bottom-right) iso tile coord.
-        var min = new gf.Point(
-                ((startY / this.parent.tileSize.y) + (startX / this.parent.tileSize.x)) / 2,
-                ((startY / this.parent.tileSize.y) - (startX / this.parent.tileSize.x)) / 2
-            ),
-            max = new gf.Point(
-                (((startY + numY) / this.parent.tileSize.y) + ((startX + numX) / this.parent.tileSize.x)) / 2,
-                (((startY + numY) / this.parent.tileSize.y) - ((startX + numX) / this.parent.tileSize.x)) / 2
-            );
+    _renderIsoTiles: function(sx, sy, sw, sh) {
+        var scaled = this.parent.scaledTileSize;
 
-        //loop from min to max for each
-        for(var a = min.y; a <= max.y; a++) {
-            for(var b = min.x; b <= max.x; b++) {
-                //if a and b are not both odd or both even, skip this iteration
-                if((a&1) !== (b&1)) continue;
+        //convert to tile coords
+        sx = Math.floor(sx / (scaled.x / 2));
+        sy = Math.floor(sy / scaled.y);
 
-                //calculate the isometric coords
-                var x = (a + b) / 2,
-                    y = (a - b) / 2;
+        //the view rect offset is opposite of what the world is
+        sx = -sx;
+        sy = -sy;
 
-                //if anyhting is negative, ignore it
-                if(x < 0 || y < 0) continue;
+        //convert to tile units
+        sw = Math.ceil(sw / (scaled.x / 2));
+        sh = Math.ceil(sh / (scaled.y / 2));
 
-                //render the tile
-                this.moveTileSprite(x, y, x, y);
+        //in this function i,j represents the coord system in the isometric plane
+        var iStart = Math.floor(this._isoToI(sx, sy)) - 1,
+            jStart = Math.floor(this._isoToJ(sx, sy)),
+            iMax = Math.ceil(this._isoToI(sx + sw, sy + sh)) + 1,
+            jMax = Math.ceil(this._isoToJ(sx, sy + sh)) + 2,
+            jMin = Math.floor(this._isoToJ(sx + sw, sy)),
+
+            iParentMax = this.parent.size.x,
+            jParentMax = this.parent.size.y,
+
+            nBump = false, //have we reached minimum j (the bump)
+            mBump = false, //have we reached maximum j (the bump)
+            n = 0, nBuffer = 1,
+            m = 1, mBuffer = 0;
+
+        for(var i = iStart; i < iMax; ++i) {
+            for(var j = jStart - n; j < jStart + m; ++j) {
+                if(i < 0 || j < 0 || i >= iParentMax || j >= jParentMax)
+                    continue;
+
+                this.moveTileSprite(i, j, i, j);
+            }
+
+            if(!nBump) {
+                //we have not reached lowest j point, increment n to go even lower next iteration
+                n++;
+
+                //check if we reached lowest j point
+                if((jStart - n) === jMin) {
+                    nBump = true;
+                }
+            } else {
+                //if we have reached deepest j start decreasing after the buffer is gone
+                if(nBuffer > 0) {
+                    nBuffer--;
+                }
+                //the buffer is gone, start decreasing n each iteration
+                else {
+                    n--;
+                }
+            }
+
+            if(!mBump) {
+                //we have not reached the highest j point, increase m to go even higher next iteration
+                m++;
+
+                if((jStart + m) === jMax) {
+                    mBump = true;
+                }
+            } else {
+                //we have reached max j, start decreasing m after the buffer is gone
+                if(mBuffer > 0) {
+                    mBuffer--;
+                }
+                //the buffer is gone, start decreasing m each iteration
+                else {
+                    m--;
+                }
             }
         }
     },
@@ -20055,8 +20114,21 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
                 t.disablePhysics();
                 this._tilePool.push(t);
                 this.tiles[tx][ty] = null;
+                this.removeChild(t);
             }
         }
+
+        // make this first-in-first-out instead of a stack
+        // see: http://jsperf.com/queue-push-unshift-vs-shift-pop/3
+        //this._tilePool.reverse();
+    },
+    _isoToI: function(x, y) {
+        // converts world isometric coordinates into the i position of the 2D-Array
+        return ((y + x) / 2);
+    },
+    _isoToJ: function(x, y) {
+        // converts world isometric coordinates into the j position of the 2D-Array
+        return ((y - x) / 2);
     },
     /**
      * Clears all the tiles currently used to render the layer
@@ -20139,8 +20211,8 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
             tile = new gf.Tile(texture);
             tile.mass = Infinity;
             tile.anchor.y = 1;
-            this.addChild(tile);
         }
+        this.addChild(tile);
 
         if(props.isCollidable)
             tile.enablePhysics(this.parent.parent.physics); //this.TiledMap.GameState.physics
@@ -20209,8 +20281,10 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
      * @return {Layer} Returns itself for chainability
      */
     pan: function(dx, dy) {
+        this.resize(this._rendered.width, this._rendered.height);
+
         this._panDelta.x += dx;
-        this._panDelta.y += dy;
+        this._panDelta.y += dy;/*
 
         //check if we need to build a buffer around the viewport
         //usually this happens on the first pan after a full render
@@ -20250,7 +20324,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         while(this._panDelta.y <= -this.parent.scaledTileSize.y) {
             this._renderDown();
             this._panDelta.y += this.parent.scaledTileSize.y;
-        }
+        }*/
     },
     _renderLeft: function(forceNew) {
         //move all the far right tiles to the left side

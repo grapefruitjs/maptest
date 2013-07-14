@@ -174,7 +174,7 @@
  "orientation":"isometric",
  "properties":
     {
-
+        "interactive":"true"
     },
  "tileheight":32,
  "tilesets":[
@@ -187,7 +187,7 @@
          "name":"greyBlack",
          "properties":
             {
-
+             "hitArea":"32,-32,0,-48,32,-64,64,-48"
             },
          "spacing":1,
          "tileheight":64,

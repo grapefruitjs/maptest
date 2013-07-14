@@ -1,3 +1,4 @@
+var n = 0;
 //require game dependencies
 define([
     'game/data/main',
@@ -15,10 +16,9 @@ define([
         game = new gf.Game(obj.containerId, {
             gravity: obj.gravity || 0,
             friction: obj.friction || 0,
-            width: $game.width(),
-            height: $game.height(),
-            background: 0x808080,
-            renderMethod: 'canvas'
+            width: $game.width() - 3,
+            height: $game.height() - 3,
+            background: 0x808080
         });
 
         game.loader.on('progress', function(evt) {
@@ -49,8 +49,9 @@ define([
     }
 
     function onWindowResize() {
-        var w = $win.width(),
-            h = $win.height();
+        var w = $game.width() - 3,
+            h = $game.height() - 3;
+        console.log('resize', w, h)
 
         if(game)
             game.resize(w, h);

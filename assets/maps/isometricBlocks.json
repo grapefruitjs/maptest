@@ -14,7 +14,7 @@
  "orientation":"isometric",
  "properties":
     {
-
+        "interactive":"true"
     },
  "tileheight":32,
  "tilesets":[
