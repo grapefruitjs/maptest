@@ -12,15 +12,7 @@ require([
             onAssetsComplete: function(game) {
             },
             onGameReady: function(game) {
-                gf.debug.show($('#game')[0], {
-                    game: game,
-                    fps: {
-                        left: 'auto',
-                        right: '5px',
-                        top: '85px'
-                    },
-                    gamepad: false
-                });
+                gf.debug.show(game);
                 window.GAME = game;
 
                 var $sw = $('#switch'),
