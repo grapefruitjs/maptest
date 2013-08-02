@@ -4,7 +4,7 @@
  * Copyright (c) 2012, Chad Engler
  * https://github.com/englercj/grapefruit
  *
- * Compiled: 2013-07-29
+ * Compiled: 2013-08-02
  *
  * GrapeFruit Game Engine is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -18167,7 +18167,7 @@ gf.PhysicsSystem = function(options) {
         this.onCollisionBegin.bind(this), //begin
         null, //preSolve
         this.onCollisionPostSolve.bind(this), //postSolve
-        null //separate
+        this.onCollisionEnd.bind(this) //separate
     );
 
     //sprite - tile collisions
@@ -18177,7 +18177,7 @@ gf.PhysicsSystem = function(options) {
         this.onCollisionBegin.bind(this), //begin
         null, //preSolve
         this.onCollisionPostSolve.bind(this), //postSolve
-        null //separate
+        this.onCollisionEnd.bind(this) //separate
     );
 
     this.actionQueue = [];
@@ -18200,9 +18200,13 @@ gf.inherits(gf.PhysicsSystem, Object, {
 
         return body;
     },
-    _createShape: function(spr, body) {
+    _createShape: function(spr, body, poly) {
         var shape,
-            hit = spr.hitArea;
+            hit = poly || spr.hitArea,
+            ax = spr.anchor ? spr.anchor.x : 0,
+            ay = spr.anchor ? spr.anchor.y : 0,
+            aw = spr.width * ax,
+            ah = spr.height * ay;
 
         //specified shape
         if(hit) {
@@ -18212,20 +18216,21 @@ gf.inherits(gf.PhysicsSystem, Object, {
                 var l = hit.x,
                     r = hit.x + hit.width,
                     b = hit.y - spr.height,
-                    t = b + hit.height,
-                    a = spr.anchor ? spr.anchor.y : 0,
-                    bias = hit.height - (hit.height * a);
+                    t = b + hit.height;
 
-                b += bias;
-                t += bias;
+                l -= aw;
+                r -= aw;
+
+                b += spr.height - ah;
+                t += spr.height - ah;
 
                 shape = new cp.BoxShape2(body, new cp.BB(l, b, r, t));
             }
             else if(hit instanceof gf.Circle) {
                 //the offset needs to move the circle to the sprite center based on the sprite's anchor (bottom-left)
                 var offset = new gf.Vector(
-                    spr.width / 4,
-                    -spr.height / 4
+                    ((spr.width / 2) - aw) + hit.x,
+                    ((spr.height / 2) - ah) + hit.y
                 );
 
                 shape = new cp.CircleShape(body, hit.radius, offset);
@@ -18234,13 +18239,13 @@ gf.inherits(gf.PhysicsSystem, Object, {
                 //cp shapes anchors are 0.5,0.5, but a polygon uses 0,0 as the topleft
                 //of the bounding rect so we have to convert
                 var points = [],
-                    ps = hit.points;//.slice().reverse();
+                    ps = hit.points;
 
                 for(var i = 0; i < ps.length; ++i) {
                     var p = ps[i];
 
-                    points.push(p.x);
-                    points.push(p.y - spr.height);
+                    points.push(p.x - aw);
+                    points.push(p.y - ah);
                 }
 
                 shape = new cp.PolyShape(body, cp.convexHull(points, null, 0), cp.vzero);
@@ -18260,18 +18265,13 @@ gf.inherits(gf.PhysicsSystem, Object, {
         shape.setElasticity(0);
         shape.setSensor(spr.sensor);
         shape.setCollisionType(this.getCollisionType(spr));
-        shape.setFriction(spr.friction !== undefined ? spr.friction : 0.1);
+        shape.setFriction(spr.friction || 0);
 
         return shape;
     },
     invalidCollisions: function() {
         this.actionQueue.push(['reindexStatic']);
-
-        if(this.space.locked) {
-            this.space.addPostStepCallback(this.onPostStep.bind(this));
-        } else {
-            this.onPostStep();
-        }
+        this.act();
     },
     getCollisionType: function(spr) {
         if(spr instanceof gf.Tile) {
@@ -18314,23 +18314,32 @@ gf.inherits(gf.PhysicsSystem, Object, {
             shape: shape,
             control: control
         }]);
-
-        if(this.space.locked) {
-            this.space.addPostStepCallback(this.onPostStep.bind(this));
-        } else {
-            this.onPostStep();
-        }
+        this.act();
     },
     remove: function(spr) {
         if(!spr || !spr._phys || !spr._phys.body || !spr._phys.shape)
             return;
 
         this.actionQueue.push(['remove', spr._phys]);
+        this.act();
+    },
+    addCustomShape: function(spr, poly, sensor) {
+        if(spr && spr._phys && spr._phys.body) {
+            var s = this._createShape(spr, spr._phys.body, poly);
 
-        if(this.space.locked) {
-            this.space.addPostStepCallback(this.onPostStep.bind(this));
-        } else {
-            this.onPostStep();
+            s.setSensor(sensor);
+            s.width = spr.width;
+            s.height = spr.height;
+            s.sprite = spr;
+            s.setElasticity(0);
+            s.setSensor(sensor !== undefined ? sensor : spr.sensor);
+            s.setCollisionType(this.getCollisionType(spr));
+            s.setFriction(spr.friction || 0);
+
+            this.actionQueue.push(['addCustomShape', { spr: spr, shape: s }]);
+            this.act();
+
+            return s;
         }
     },
     setMass: function(spr, mass) {
@@ -18389,9 +18398,9 @@ gf.inherits(gf.PhysicsSystem, Object, {
             spr2 = shapes[1].sprite;
 
         //only call the sensor collisions here
-        if(arbiter.isFirstContact() && (shapes[0].sensor || shapes[1].sensor)) {
-            spr1.onCollision(spr2, arbiter.getNormal(0));
-            spr2.onCollision(spr1, arbiter.getNormal(0));
+        if(shapes[0].sensor || shapes[1].sensor) {
+            spr1.onCollision(spr2, arbiter.getNormal(0), shapes[1], shapes[0]);
+            spr2.onCollision(spr1, arbiter.getNormal(0), shapes[0], shapes[1]);
         }
 
         //maintain the colliding state
@@ -18403,12 +18412,30 @@ gf.inherits(gf.PhysicsSystem, Object, {
             spr2 = shapes[1].sprite;
 
         if(arbiter.isFirstContact()) {
-            spr1.onCollision(spr2, arbiter.totalImpulse());
-            spr2.onCollision(spr1, arbiter.totalImpulse());
+            spr1.onCollision(spr2, arbiter.totalImpulse(), shapes[1], shapes[0]);
+            spr2.onCollision(spr1, arbiter.totalImpulse(), shapes[0], shapes[1]);
         }
 
         //maintain the colliding state
         return true;
+    },
+    onCollisionEnd: function(arbiter) {//, space) {
+        var shapes = arbiter.getShapes(),
+            spr1 = shapes[0].sprite,
+            spr2 = shapes[1].sprite;
+
+        spr1.onSeparate(spr2, shapes[1], shapes[0]);
+        spr2.onSeparate(spr1, shapes[0], shapes[1]);
+
+        //maintain the colliding state
+        return true;
+    },
+    act: function() {
+        if(this.space.locked) {
+            this.space.addPostStepCallback(this.onPostStep.bind(this));
+        } else {
+            this.onPostStep();
+        }
     },
     onPostStep: function() {
         //remove items
@@ -18455,6 +18482,15 @@ gf.inherits(gf.PhysicsSystem, Object, {
                 case 'reindex':
                     this.space.reindexStatic();
                     break;
+
+                case 'addCustomShape':
+                    if(!data.spr._phys.customShapes)
+                        data.spr._phys.customShapes = [];
+
+                    data.spr._phys.customShapes.push(data.shape);
+                    this.space.addShape(data.shape);
+                    break;
+
             }
         }
     }
@@ -18615,56 +18651,101 @@ gf.PhysicsSystem.COLLISION_TYPE = {
      *
      * @method onCollision
      * @param obj {Sprite} Colliding sprite
+     * @param vec {Vector} Collision vector (for sensors this is normalized)
+     * @param colShape {cp.Shape} The colliding physics shape
+     * @param myShape {Sprite} Your physics shape that caused the collision
      */
-    this.onCollision = function(obj, vec) {
+    this.onCollision = function(obj, vec, colShape, myShape) {
         if(obj.type === gf.Sprite.TYPE.COLLECTABLE)
             obj.destroy();
 
-        this.emit('collision', obj, vec);
+        this.emit('collision', obj, vec, colShape, myShape);
     };
 
+    /**
+     * On Seperate Event
+     *      called when this sprite collides into another, or is being collided into by another.
+     *      By default if something collides with a collectable sprite we destroy the collectable
+     *      and if we collide with a solid tile we kill our velocity. This method will emit a
+     *      'collision' event that you can listen for
+     *
+     * @method onCollision
+     * @param obj {Sprite} Colliding sprite
+     * @param colShape {cp.Shape} The colliding physics shape
+     * @param myShape {Sprite} Your physics shape that caused the collision
+     */
+    this.onSeparate = function(obj, colShape, myShape) {
+        this.emit('separate', obj, colShape, myShape);
+    };
 
     /**
      * Shows the physics body for the sprite
      *
      * @method showPhysics
      */
-    this.showPhysics = function(size, color, alpha) {
+    this.showPhysics = function(style) {
         this._showHit = true;
         if(!this._phys || !this._phys.body || !this._phys.shape)
             return;
 
-        if(size === undefined)
-            size = 1;
-
-        if(color === undefined)
-            color = 0xFF00FF;
-
-        if(alpha === undefined)
-            alpha = 1;
-
+        //no graphics object created yet
         if(!this._hit) {
             this._hit = new PIXI.Graphics();
-            this._hit.style = {
-                size: size,
-                color: color,
-                alpha: alpha
-            };
 
             this.parent.addChild(this._hit);
         }
 
-        var shape = this._phys.shape,
-            p = this._phys.body.p,
-            g = this._hit;
+        //pass a new style, or haven't defined one yet
+        if(style || !this._hit.style) {
+            style = this._setStyleDefaults(style);
+            style.sensor = this._setStyleDefaults(style.sensor);
+
+            this._hit.style = style;
+        }
+
+        var p = this._phys.body.p,
+            g = this._hit,
+            c = this._phys.customShapes;
+
+        if(!this._hit.lastPos)
+            this._hit.lastPos = new gf.Point();
+        else if(this._hit.lastPos.x === p.x && this._hit.lastPos.y === p.y)
+            return;
+
+        this._hit.lastPos.x = p.x;
+        this._hit.lastPos.y = p.y;
 
         g.clear();
-        g.lineStyle(g.style.size, g.style.color, g.style.alpha);
+        this._drawPhysicsShape(this._phys.shape, g, p);
+
+        if(c) {
+            for(var i = 0; i < c.length; ++i) {
+                this._drawPhysicsShape(c[i], g, p);
+            }
+        }
+    };
+
+    this._setStyleDefaults = function(style) {
+        style = style || {};
+        style.size = style.size || 1;
+        style.color = style.color || 0xff00ff;
+        style.alpha = style.alpha || 1;
+
+        return style;
+    };
+
+    this._drawPhysicsShape = function(shape, g, p) {
+        var style = g.style;
+
+        if(shape.sensor)
+            style = style.sensor;
+
+        g.lineStyle(style.size, style.color, style.alpha);
 
         //circle
         if(shape.type === 'circle') {
-            var cx = shape.bb_l + ((shape.bb_r - shape.bb_l) / 2) + shape.c.x,
-                cy = shape.bb_t + ((shape.bb_b - shape.bb_t) / 2) + shape.c.y;
+            var cx = shape.bb_l + ((shape.bb_r - shape.bb_l) / 2),
+                cy = shape.bb_t + ((shape.bb_b - shape.bb_t) / 2);
 
             g.drawCircle(cx, cy, shape.r);
         }
@@ -18693,8 +18774,9 @@ gf.PhysicsSystem.COLLISION_TYPE = {
      */
     this.hidePhysics = function() {
         this._showHit = false;
-        if(this._hit)
+        if(this._hit) {
             this._hit.visible = false;
+        }
     };
 };
 //you can only have 1 audio context on a page, so we store one for use in each manager
@@ -20138,8 +20220,7 @@ gf.inherits(gf.Sprite, PIXI.Sprite, {
      * @method destroy
      */
     destroy: function() {
-        if(this.physics)
-            this.disablePhysics();
+        this.disablePhysics();
 
         if(this.parent)
             this.parent.removeChild(this);
@@ -20270,17 +20351,22 @@ gf.Sprite.TYPE = {
  * @param [start] {String} The animation to start with, defaults to the first found key otherwise
  */
 gf.AnimatedSprite = function(anims, speed, start) {
-    //massage animations into full format
-    for(var a in anims) {
-        if(start === undefined)
-            start = a;
+    if(anims instanceof Array) {
+        anims = { _default: { frames: [anims] } };
+        start = '_default';
+    } else {
+        //massage animations into full format
+        for(var a in anims) {
+            if(start === undefined)
+                start = a;
 
-        var anim = anims[a];
+            var anim = anims[a];
 
-        if(anim instanceof Array)
-            anims[a] = { frames: anim };
-        else if(anim instanceof gf.Texture)
-            anims[a] = { frames: [anim] };
+            if(anim instanceof Array)
+                anims[a] = { frames: anim };
+            else if(anim instanceof gf.Texture)
+                anims[a] = { frames: [anim] };
+        }
     }
 
     gf.Sprite.call(this, anims[start].frames[0]);
@@ -20375,10 +20461,13 @@ gf.inherits(gf.AnimatedSprite, gf.Sprite, {
             this.currentFrame = anim;
         } else {
             this.currentFrame = frame || 0;
+            this.lastRound = gf.math.round(frame || 0);
             this.currentAnimation = anim;
         }
-
         this.playing = true;
+
+        this.setTexture(this.animations[this.currentAnimation].frames[this.currentFrame]);
+        this.emit('frame', this.currentAnimation, this.lastRound);
     },
     /**
      * Goes to a frame and stops playing the animation
@@ -20392,11 +20481,13 @@ gf.inherits(gf.AnimatedSprite, gf.Sprite, {
             this.currentFrame = anim;
         } else {
             this.currentFrame = frame || 0;
+            this.lastRound = gf.math.round(frame || 0);
             this.currentAnimation = anim;
         }
+        this.playing = false;
 
         this.setTexture(this.animations[this.currentAnimation].frames[this.currentFrame]);
-        this.playing = false;
+        this.emit('frame', this.currentAnimation, this.lastRound);
     },
     /**
      * Starts playing the currently active animation
@@ -20433,7 +20524,11 @@ gf.inherits(gf.AnimatedSprite, gf.Sprite, {
         round = gf.math.round(this.currentFrame);
 
         if(round < anim.frames.length) {
-            this.setTexture(anim.frames[round]);
+            if(round !== this.lastRound) {
+                this.lastRound = round;
+                this.setTexture(anim.frames[round]);
+                this.emit('frame', this.currentAnimation, round);
+            }
         }
         else {
             if(loop) {
@@ -20449,13 +20544,11 @@ gf.inherits(gf.AnimatedSprite, gf.Sprite, {
  * A basic Camera object that provides some effects. It also will contain the HUD and GUI
  * to ensure they are using "screen-coords".
  *
- * TODO: Currently fade/flash don't show the colors. How should I actually show them, a gf.Sprite?
- *
  * @class Camera
  * @extends gf.DisplayObjectContainer
  * @namespace gf
  * @constructor
- * @param game {Game} The game this camera belongs to
+ * @param game {gf.Game} The game this camera belongs to
  * @param settings {Object} Any settings you want to override the default properties with
  */
 gf.Camera = function(game, settings) {
@@ -20463,7 +20556,7 @@ gf.Camera = function(game, settings) {
      * The bounds of that the camera can move to
      *
      * @property bounds
-     * @type Rectangle
+     * @type gf.Rectangle
      * @readOnly
      * @private
      */
@@ -20474,7 +20567,7 @@ gf.Camera = function(game, settings) {
      * before the camera moves to track it.
      *
      * @property _deadzone
-     * @type Rectangle
+     * @type gf.Rectangle
      * @readOnly
      * @private
      */
@@ -20484,7 +20577,7 @@ gf.Camera = function(game, settings) {
      * The target that the camera will follow
      *
      * @property _target
-     * @type Sprite
+     * @type gf.Sprite
      * @readOnly
      * @private
      */
@@ -20494,7 +20587,7 @@ gf.Camera = function(game, settings) {
      * The size of the camera
      *
      * @property size
-     * @type Vector
+     * @type gf.Vector
      * @readOnly
      */
     this.size = new gf.Vector(0, 0);
@@ -20503,7 +20596,7 @@ gf.Camera = function(game, settings) {
      * Half of the size of the camera
      *
      * @property hSize
-     * @type Vector
+     * @type gf.Vector
      * @readOnly
      */
     this.hSize = new gf.Vector(0, 0);
@@ -20512,38 +20605,51 @@ gf.Camera = function(game, settings) {
      * The game this camera views
      *
      * @property game
-     * @type Game
+     * @type gf.Game
      * @readOnly
      */
     this.game = game;
 
     /**
-     * The _fx namespace has all the instance variables for all the fx
+     * The fxpools for doing camera effects
      *
-     * @property _fx
+     * @property fxpools
      * @type Object
      * @private
      * @readOnly
      */
-    this._fx = {
-        flash: {
-            alpha: 0,
-            complete: null
-        },
-        fade: {
-            alpha: 0,
-            complete: null
-        },
-        shake: {
-            intensity: 0,
-            duration: 0,
-            direction: gf.Camera.SHAKE.BOTH,
-            offset: new gf.Point(0, 0),
-            complete: null
-        }
+    this.fxpools = {
+        flash: new gf.ObjectPool(gf.Camera.fx.Flash, this),
+        fade: new gf.ObjectPool(gf.Camera.fx.Fade, this),
+        shake: new gf.ObjectPool(gf.Camera.fx.Shake, this),
+        scanlines: new gf.ObjectPool(gf.Camera.fx.Scanlines, this),
+        close: new gf.ObjectPool(gf.Camera.fx.Close, this)
     };
 
     gf.DisplayObjectContainer.call(this, settings);
+
+    /*
+     * Dynamic addition of fx shortcuts
+    var self = this;
+    Object.keys(this.fxpools).forEach(function(key) {
+        self[key] = function() {
+            var e = self.fxpools[key].create(),
+                args = Array.prototype.slice.call(arguments),
+                cb = args.pop();
+
+            if(typeof cb !== 'function')
+                args.push(cb);
+
+            args.push(function() {
+                self.fxpools[key].free(e);
+                if(typeof cb === 'function')
+                    cb();
+            });
+
+            return e.start.apply(e, args);
+        };
+    });
+    */
 };
 
 gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
@@ -20551,178 +20657,93 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * Makes the camera flash with a certain color
      *
      * @method flash
-     * @param color {Number} The color to flash the screen with
-     * @param duration {Number} The time in milliseconds to fade away
-     * @param callback {Function} The callback to call when the flash has completed
-     * @return {Camera} Returns iteself for chainability
+     * @param [color=0xffffff] {Number} The color to flash the screen with
+     * @param [duration=1000] {Number} The time in milliseconds to fade away
+     * @param [callback] {Function} The callback to call when the flash has completed
+     * @return {gf.Camera.fx.Flash} Returns the effect object
      */
     flash: function(color, duration, cb) {
-        if(this._fx.flash.alpha > 0) return this;
+        var flash = this.fxpools.flash.create(),
+            self = this;
 
-        if(typeof duration === 'function') {
-            cb = duration;
-            duration = 1;
-        }
-
-        if(typeof color === 'function') {
-            cb = color;
-            duration = 1;
-            color = 0xFFFFFF;
-        }
-
-        duration = duration || 1;
-        if(duration < 0) duration = 1;
-
-        if(color === undefined)
-            color = 0xFFFFFF;
-
-        /*var red = color >> 16 & 0xFF,
-            green = color >> 8 & 0xFF,
-            blue = color & 0xFF;*/
-
-        this._fx.flash.color = color;
-        this._fx.flash.duration = duration;
-        this._fx.flash.alpha = 1;
-        this._fx.flash.complete = cb;
-
-        return this;
-    },
-    /**
-     * Stops a running flash, instantly hiding it
-     *
-     * @method stopFlash
-     * @return {Camera} Returns iteself for chainability
-     */
-    stopFlash: function() {
-        this._fx.flash.alpha = 0;
-
-        return this;
+        return flash.start(color, duration, function() {
+            self.fxpools.flash.free(flash);
+            if(typeof cb === 'function')
+                cb();
+        });
     },
     /**
      * Makes the camera fade into a color
      *
      * @method fade
-     * @param color {Number} The color to fade into
-     * @param duration {Number} The time in milliseconds to take to fade in
-     * @param callback {Function} The callback to call when the fade has completed
-     * @return {Camera} Returns iteself for chainability
+     * @param [color=0xffffff] {Number} The color to fade into
+     * @param [duration=1000] {Number} The time in milliseconds to take to fade in
+     * @param [callback] {Function} The callback to call when the fade has completed
+     * @return {gf.Camera.fx.Fade} Returns the effect object
      */
     fade: function(color, duration, cb) {
-        if(this._fx.fade.alpha > 0) return this;
+        var fade = this.fxpools.fade.create(),
+            self = this;
 
-        if(typeof duration === 'function') {
-            cb = duration;
-            duration = 1;
-        }
-
-        if(typeof color === 'function') {
-            cb = color;
-            duration = 1;
-            color = 0xFFFFFF;
-        }
-
-        duration = duration || 1;
-        if(duration < 0) duration = 1;
-
-        if(color === undefined)
-            color = 0xFFFFFF;
-
-        /*var red = color >> 16 & 0xFF,
-            green = color >> 8 & 0xFF,
-            blue = color & 0xFF;*/
-
-        this._fx.fade.color = color;
-        this._fx.fade.duration = duration;
-        this._fx.fade.alpha = 0.01;
-        this._fx.fade.complete = cb;
-
-        return this;
-    },
-    /**
-     * Stops a running fade, instantly hiding it
-     *
-     * @method stopFade
-     * @return {Camera} Returns iteself for chainability
-     */
-    stopFade: function() {
-        this._fx.fade.alpha = 0;
-
-        return this;
+        return fade.start(color, duration, function() {
+            self.fxpools.fade.free(fade);
+            if(typeof cb === 'function')
+                cb();
+        });
     },
     /**
      * Shakes the camera around a bit, to show it who is boss.
      *
      * @method shake
-     * @param intensity {Number} How hard to shake around
-     * @param duration {Number} The time in milliseconds to shake for
-     * @param direction {Camera.SHAKE} The axes to shake the camera in default is gf.Camera.SHAKE.BOTH
-     * @param callback {Function} The callback to call when the shaking has stopped
-     * @return {Camera} Returns iteself for chainability
+     * @param [intensity=0.01] {Number} How hard to shake around
+     * @param [duration=1000] {Number} The time in milliseconds to shake for
+     * @param [direction=gf.Camera.DIRECTION.BOTH] {gf.Camera.DIRECTION} The axes to shake the camera in default is gf.Camera.SHAKE.BOTH
+     * @param [callback] {Function} The callback to call when the shaking has stopped
+     * @return {gf.Camera.fx.Shake} Returns the effect object
      */
     shake: function(intensity, duration, direction, cb) {
-        //already shaking (call stop first)
-        if(this._fx.shake.offset.x !== 0 || this._fx.shake.offset.y !== 0)
-            return this;
+        var shake = this.fxpools.shake.create(),
+            self = this;
 
-        if(typeof direction === 'function') {
-            cb = direction;
-            direction = gf.Camera.SHAKE.BOTH;
-        }
-
-        if(typeof duration === 'function') {
-            cb = duration;
-            direction = gf.Camera.SHAKE.BOTH;
-            duration = null;
-        }
-
-        if(typeof intensity === 'function') {
-            cb = intensity;
-            direction = gf.Camera.SHAKE.BOTH;
-            duration = null;
-            intensity = null;
-        }
-
-        intensity = intensity || 0.01;
-        duration = duration || 1000;
-        direction = direction || gf.Camera.SHAKE.BOTH;
-
-        //setup a shake effect
-        this._fx.shake.intensity = intensity;
-        this._fx.shake.duration = duration;
-        this._fx.shake.direction = direction;
-        this._fx.shake.offset.x = 0;
-        this._fx.shake.offset.y = 0;
-        this._fx.shake.complete = cb;
-
-        return this;
+        return shake.start(intensity, duration, direction, function() {
+            self.fxpools.shake.free(shake);
+            if(typeof cb === 'function')
+                cb();
+        });
     },
     /**
-     * Stops a running shake effect
+     * Adds a mask that will hide the world via a close-in transition.
      *
-     * @method stopShake
-     * @return {Camera} Returns iteself for chainability
+     * @method scanlines
+     * @param [shape='circle'] {String} The shape of the transition, either 'circle' or 'rectangle'
+     * @param [duration=1000] {Number} The time in milliseconds it takes to close the transition
+     * @return {gf.Camera.fx.Close} Returns the effect object
      */
-    stopShake: function() {
-        if(this._fx.shake.duration !== 0) {
-            this._fx.shake.duration = 0;
-            this._fx.shake.offset.x = 0;
-            this._fx.shake.offset.y = 0;
-        }
+    close: function(shape, duration, cb) {
+        var close = this.fxpools.close.create(),
+            self = this;
 
-        return this;
+        return close.start(shape, duration, function() {
+            self.fxpools.close.free(close);
+            if(typeof cb === 'function')
+                cb();
+        });
     },
     /**
-     * Stops all currently running effects (flash, fade, shake)
+     * Shows scanlines accross the screen, retro arcade style
      *
-     * @method stopAll
-     * @return {Camera} Returns iteself for chainability
+     * @method scanlines
+     * @param [color=0x000000] {Number} The hex color the lines should be
+     * @param [direction=gf.Camera.DIRECTION.HORIZONTAL] {gf.Camera.DIRECTION} The axes to shake the camera in default is gf.Camera.SHAKE.BOTH
+     * @param [spacing=4] {Number} The spacing between each line
+     * @param [thickness=1] {Number} The thickness of each line
+     * @param [alpha=0.3] {Number} The alpha of each line
+     * @return {gf.Camera.fx.Scanlines} Returns the effect object
      */
-    stopAll: function() {
-        this.stopFlash();
-        this.stopFade();
-        this.stopShake();
+    scanlines: function(color, direction, spacing, thickness, alpha) {
+        var scanlines = this.fxpools.scanlines.create();
 
-        return this;
+        return scanlines.start(color, direction, spacing, thickness, alpha);
     },
     /**
      * Follows an sprite with the camera, ensuring they are always center view. You can
@@ -20730,9 +20751,9 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * to move with them.
      *
      * @method follow
-     * @param sprite {Sprite} The sprite to follow
-     * @param style {Camera.FOLLOW} The style of following, defaults to gf.Camera.FOLLOW.LOCKON
-     * @return {Camera} Returns iteself for chainability
+     * @param sprite {gf.Sprite} The sprite to follow
+     * @param [style=gf.Camera.FOLLOW.LOCKON] {gf.Camera.FOLLOW} The style of following
+     * @return {gf.Camera} Returns iteself for chainability
      */
     follow: function(spr, style) {
         if(!(spr instanceof gf.Sprite))
@@ -20784,7 +20805,7 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * Stops following any sprites
      *
      * @method unfollow
-     * @return {Camera} Returns iteself for chainability
+     * @return {gf.Camera} Returns iteself for chainability
      */
     unfollow: function() {
         this._target = null;
@@ -20794,8 +20815,8 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * Focuses the camera on a sprite.
      *
      * @method focusSprite
-     * @param sprite {Sprite} The sprite to focus on
-     * @return {Camera} Returns iteself for chainability
+     * @param sprite {gf.Sprite} The sprite to focus on
+     * @return {gf.Camera} Returns iteself for chainability
      */
     focusSprite: function(spr) {
         return this.focus(
@@ -20808,9 +20829,9 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * not go outside the bounds set with setBounds()
      *
      * @method focus
-     * @param x {Number|Point} The x coord to focus on, if a Point is passed the y param is ignored
+     * @param x {Number|gf.Point} The x coord to focus on, if a Point is passed the y param is ignored
      * @param y {Number} The y coord to focus on
-     * @return {Camera} Returns iteself for chainability
+     * @return {gf.Camera} Returns iteself for chainability
      */
     focus: function(x, y) {
         y = x instanceof gf.Point ? x.y : (y || 0);
@@ -20831,9 +20852,9 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * not go outside the bounds set with setBounds()
      *
      * @method pan
-     * @param x {Number|Point} The x amount to pan, if a Point is passed the y param is ignored
+     * @param x {Number|gf.Point} The x amount to pan, if a Point is passed the y param is ignored
      * @param y {Number} The y ammount to pan
-     * @return {Camera} Returns iteself for chainability
+     * @return {gf.Camera} Returns iteself for chainability
      */
     pan: function(dx, dy) {
         dy = dx instanceof gf.Point ? dx.y : (dy || 0);
@@ -20882,7 +20903,7 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * @private
      * @param w {Number} The new width
      * @param h {Number} The new height
-     * @return {Camera} Returns iteself for chainability
+     * @return {gf.Camera} Returns iteself for chainability
      */
     resize: function(w, h) {
         this.size.set(w, h);
@@ -20898,8 +20919,8 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * min and max, and is set for you.
      *
      * @method constrain
-     * @param shape {Rectangle|Polygon|Circle|Ellipse} The shape to constrain the camera into
-     * @return {Camera} Returns iteself for chainability
+     * @param shape {gf.Rectangle|gf.Polygon|gf.Circle|gf.Ellipse} The shape to constrain the camera into
+     * @return {gf.Camera} Returns iteself for chainability
      */
     constrain: function(shape, scaled) {
         this._bounds = shape;
@@ -20928,13 +20949,15 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
     },
     unconstrain: function() {
         this._bounds = null;
+
+        return this;
     },
     /**
      * Called internally every frame. Updates all effects and the follow
      *
      * @method update
      * @param dt {Number} The delta time (in seconds) since the last update
-     * @return {Camera} Returns iteself for chainability
+     * @return {gf.gf.Camera} Returns iteself for chainability
      * @private
      */
     update: function(dt) {
@@ -20976,59 +20999,11 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
             }
         }
 
-        //update flash effect
-        if(this._fx.flash.alpha > 0) {
-            this._fx.flash.alpha -= (dt * 1000) / this._fx.flash.duration;
-
-            if(this._fx.flash.alpha <= 0) {
-                this._fx.flash.alpha = 0;
-
-                if(this._fx.flash.complete)
-                    this._fx.flash.complete();
-            }
-        }
-
-        //update fade effect
-        if(this._fx.fade.alpha > 0) {
-            this._fx.fade.alpha += (dt * 1000) / this._fx.fade.duration;
-
-            if(this._fx.fade.alpha >= 1) {
-                this._fx.fade.alpha = 1;
-
-                if(this._fx.fade.complete) {
-                    this._fx.fade.complete();
-                }
-            }
-        }
-
-        //update shake effect
-        if(this._fx.shake.duration > 0) {
-            this._fx.shake.duration -= (dt * 1000);
-
-            //pan back to the original position
-            this._fx.shake.offset.x = -this._fx.shake.offset.x;
-            this._fx.shake.offset.y = -this._fx.shake.offset.y;
-            this.pan(this._fx.shake.offset);
-
-            if(this._fx.shake.duration <= 0) {
-                this._fx.shake.duration = 0;
-                this._fx.shake.offset.x = 0;
-                this._fx.shake.offset.y = 0;
-
-                if(this._fx.shake.complete) {
-                    this._fx.shake.complete();
-                }
-            }
-            else {
-                //pan to a random offset
-                if((this._fx.shake.direction === gf.Camera.SHAKE.BOTH) || (this._fx.shake.direction === gf.Camera.SHAKE.HORIZONTAL))
-                    this._fx.shake.offset.x = Math.round(Math.random() * this._fx.shake.intensity * this.size.x * 2 - this._fx.shake.intensity * this.size.x);
-
-                if ((this._fx.shake.direction === gf.Camera.SHAKE.BOTH) || (this._fx.shake.direction === gf.Camera.SHAKE.VERTICAL))
-                    this._fx.shake.offset.y = Math.round(Math.random() * this._fx.shake.intensity * this.size.y * 2 - this._fx.shake.intensity * this.size.y);
-
-                this.pan(this._fx.shake.offset);
-            }
+        //update effects
+        for(var i = 0, il = this.children.length; i < il; ++i) {
+            var c = this.children[i];
+            if(c.update)
+                c.update(dt);
         }
 
         return this;
@@ -21048,6 +21023,354 @@ gf.Camera.FOLLOW = {
     TOPDOWN_TIGHT: 2,
     LOCKON: 3
 };
+gf.Camera.fx = {
+    /**
+     * Camera directions, used for certain effects (like shake and scanlines)
+     *
+     * @property DIRECTION
+     * @type Object
+     * @static
+     */
+    DIRECTION: {
+        BOTH: 0,
+        HORIZONTAL: 1,
+        VERTICAL: 2
+    }
+};
+
+gf.Camera.fx.Effect = function() {
+    gf.DisplayObjectContainer.call(this);
+
+    this.addChild(this.gfx = new PIXI.Graphics());
+    this.gfx.visible = false;
+};
+
+gf.inherits(gf.Camera.fx.Effect, gf.DisplayObjectContainer, {
+    start: function() {
+        return this;
+    },
+    stop: function() {
+        return this;
+    },
+    update: function() {
+        return this;
+    },
+    _complete: function() {
+        if(typeof this.cb === 'function')
+            this.cb();
+    }
+});
+gf.Camera.fx.Close = function() {
+    gf.Camera.fx.Effect.call(this);
+};
+
+gf.inherits(gf.Camera.fx.Close, gf.Camera.fx.Effect, {
+    start: function(shape, duration, cb) {
+        gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof duration === 'function') {
+            cb = duration;
+            duration = null;
+        }
+
+        if(typeof shape === 'function') {
+            cb = shape;
+            duration = null;
+            shape = null;
+        }
+
+        this.shape = shape || 'circle';
+        this.duration = duration && duration > 0 ? duration : 1000;
+        this.cb = cb;
+
+        if(shape === 'circle') {
+            this.cx = this.parent.size.x / 2;
+            this.cy = this.parent.size.y / 2;
+            this.radius = this.maxRadius = Math.max(this.parent.size.x / 2, this.parent.size.y / 2);
+        } else {
+            this.x = 0;
+            this.y = 0;
+            this.w = this.mx = this.parent.size.x;
+            this.h = this.my = this.parent.size.y;
+        }
+
+        this.gfx.visible = true;
+        this.parent.game.world.mask = this.gfx;
+
+        return this;
+    },
+    stop: function() {
+        gf.Camera.fx.Effect.prototype.stop.call(this);
+
+        this.radius = this.sx = this.sy = 0;
+        this.gfx.visible = false;
+
+        if(this.parent.game.world.mask === this.gfx)
+            this.parent.game.world.mask = null;
+
+        return this;
+    },
+    update: function(dt) {
+        if(!this.gfx.visible)
+            return;
+
+        var part = (dt * 1000) / this.duration;
+
+        this.gfx.clear();
+        this.gfx.beginFill(0xff00ff);
+
+        switch(this.shape) {
+            case 'circle':
+                this.radius -= (part * this.maxRadius);
+
+                if(this.radius <= 0) {
+                    this.stop();
+                    this._complete();
+                } else {
+                    this.gfx.drawCircle(this.cx, this.cy, this.radius);
+                }
+                break;
+
+            case 'rect':
+            case 'rectangle':
+                this.x += (part * this.mx) / 2;
+                this.y += (part * this.my) / 2;
+                this.w -= (part * this.mx);
+                this.h -= (part * this.my);
+
+                if(this.x >= (this.mx / 2)) {
+                    this.stop();
+                    this._complete();
+                } else {
+                    this.gfx.drawRect(this.x, this.y, this.w, this.h);
+                }
+                break;
+        }
+
+        return this;
+    }
+});
+gf.Camera.fx.Fade = function() {
+    gf.Camera.fx.Effect.call(this);
+};
+
+gf.inherits(gf.Camera.fx.Fade, gf.Camera.fx.Effect, {
+    start: function(color, duration, cb) {
+        gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof duration === 'function') {
+            cb = duration;
+            duration = null;
+        }
+
+        if(typeof color === 'function') {
+            cb = color;
+            duration = null;
+            color = null;
+        }
+
+        color = typeof color === 'number' ? color : 0xFFFFFF;
+        this.duration = duration && duration > 0 ? duration : 1000;
+        this.cb = cb;
+
+        this.gfx.visible = true;
+        this.gfx.alpha = 0;
+        this.gfx.clear();
+        this.gfx.beginFill(color);
+        this.gfx.drawRect(0, 0, this.parent.size.x, this.parent.size.y);
+
+        return this;
+    },
+    stop: function() {
+        gf.Camera.fx.Effect.prototype.stop.call(this);
+
+        this.gfx.alpha = 1;
+        this.gfx.visible = false;
+
+        return this;
+    },
+    update: function(dt) {
+        if(this.gfx.alpha < 1) {
+            this.gfx.alpha += (dt * 1000) / this.duration;
+
+            if(this.gfx.alpha >= 1) {
+                this.stop();
+                this._complete();
+            }
+        }
+
+        return this;
+    }
+});
+gf.Camera.fx.Flash = function() {
+    gf.Camera.fx.Effect.call(this);
+};
+
+gf.inherits(gf.Camera.fx.Flash, gf.Camera.fx.Effect, {
+    start: function(color, duration, cb) {
+        gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof duration === 'function') {
+            cb = duration;
+            duration = null;
+        }
+
+        if(typeof color === 'function') {
+            cb = color;
+            duration = null;
+            color = null;
+        }
+
+        color = typeof color === 'number' ? color : 0xFFFFFF;
+        this.duration = duration && duration > 0 ? duration : 1000;
+        this.cb = cb;
+
+        this.gfx.visible = true;
+        this.gfx.alpha = 1;
+        this.gfx.clear();
+        this.gfx.beginFill(color);
+        this.gfx.drawRect(0, 0, this.parent.size.x, this.parent.size.y);
+
+        return this;
+    },
+    stop: function() {
+        gf.Camera.fx.Effect.prototype.stop.call(this);
+
+        this.gfx.alpha = 0;
+        this.gfx.visible = false;
+
+        return this;
+    },
+    update: function(dt) {
+        if(this.gfx.alpha > 0) {
+            this.gfx.alpha -= (dt * 1000) / this.duration;
+
+            if(this.gfx.alpha <= 0) {
+                this.stop();
+                this._complete();
+            }
+        }
+
+        return this;
+    }
+});
+gf.Camera.fx.Scanlines = function() {
+    gf.Camera.fx.Effect.call(this);
+};
+
+gf.inherits(gf.Camera.fx.Scanlines, gf.Camera.fx.Effect, {
+    start: function(color, direction, spacing, thickness, alpha) {
+        gf.Camera.fx.Effect.prototype.start.call(this);
+
+        color = color || 0x000000;
+        direction = direction || gf.Camera.fx.DIRECTION.HORIZONTAL;
+        spacing = spacing || 4;
+        thickness = thickness || 1;
+        alpha = alpha || 0.3;
+
+        var sx = this.parent.size.x,
+            sy = this.parent.size.y;
+
+        this.gfx.clear();
+        this.gfx.visible = true;
+        this.gfx.beginFill(color, alpha);
+
+        //draw the lines
+        if((direction === gf.Camera.fx.DIRECTION.BOTH) || (direction === gf.Camera.fx.DIRECTION.VERTICAL)) {
+            for(var x = 0; x < sx; x += spacing) {
+                this.gfx.drawRect(x, 0, thickness, sy);
+            }
+        }
+
+        if((direction === gf.Camera.fx.DIRECTION.BOTH) || (direction === gf.Camera.fx.DIRECTION.HORIZONTAL)) {
+            for(var y = 0; y < sy; y += spacing) {
+                this.gfx.drawRect(0, y, sx, thickness);
+            }
+        }
+        this.gfx.endFill();
+
+        return this;
+    },
+    stop: function() {
+        gf.Camera.fx.Effect.prototype.stop.call(this);
+
+        this.gfx.visible = false;
+
+        return this;
+    }
+});
+
+gf.Camera.fx.Shake = function() {
+    gf.Camera.fx.Effect.call(this);
+    this.offset = new gf.Vector();
+};
+
+gf.inherits(gf.Camera.fx.Shake, gf.Camera.fx.Effect, {
+    start: function(intensity, duration, direction, cb) {
+        gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof direction === 'function') {
+            cb = direction;
+            direction = null;
+        }
+
+        if(typeof duration === 'function') {
+            cb = duration;
+            direction = null;
+            duration = null;
+        }
+
+        if(typeof intensity === 'function') {
+            cb = intensity;
+            direction = null;
+            duration = null;
+            intensity = null;
+        }
+
+        this.intensity = intensity || 0.01;
+        this.duration = duration || 1000;
+        this.direction = direction || gf.Camera.fx.DIRECTION.BOTH;
+        this.offset.x = this.offset.y = 0;
+        this.cb = cb;
+
+        return this;
+    },
+    stop: function() {
+        gf.Camera.fx.Effect.prototype.stop.call(this);
+
+        this.duration = this.offset.x = this.offset.y = 0;
+
+        return this;
+    },
+    update: function(dt) {
+        //update shake effect
+        if(this.duration > 0) {
+            this.duration -= (dt * 1000);
+
+            //pan back to the original position
+            this.offset.x = -this.offset.x;
+            this.offset.y = -this.offset.y;
+            this.parent.pan(this.offset.x, this.offset.y);
+
+            //check if we are complete
+            if(this.duration <= 0) {
+                this.stop();
+                this._complete();
+            }
+            //otherwise do the shake
+            else {
+                //pan to a random offset
+                if((this.direction === gf.Camera.fx.DIRECTION.BOTH) || (this.direction === gf.Camera.fx.DIRECTION.HORIZONTAL))
+                    this.offset.x = gf.math.round(Math.random() * this.intensity * this.parent.size.x * 2 - this.intensity * this.parent.size.x);
+
+                if ((this.direction === gf.Camera.fx.DIRECTION.BOTH) || (this.direction === gf.Camera.fx.DIRECTION.VERTICAL))
+                    this.offset.y = gf.math.round(Math.random() * this.intensity * this.parent.size.y * 2 - this.intensity * this.parent.size.y);
+
+                this.parent.pan(this.offset.x, this.offset.y);
+            }
+        }
+    }
+});
 
 /**
  * Camera shake directions (used for camera.shake())
@@ -21056,7 +21379,7 @@ gf.Camera.FOLLOW = {
  * @type Object
  * @static
  */
-gf.Camera.SHAKE = {
+gf.Camera.fx.SHAKE = {
     BOTH: 0,
     HORIZONTAL: 1,
     VERTICAL: 2
@@ -21523,6 +21846,20 @@ gf.Game = function(contId, settings) {
      * @type Map
      * @readOnly
      */
+
+     //pixi does some prevent default on mousedown, so we need to
+     //make sure mousedown will focus the canvas or keyboard events break
+
+
+    //ensure that key events will work
+    var view = this.renderer.view;
+    if(!view.getAttribute('tabindex'))
+        view.setAttribute('tabindex','1');
+
+    view.focus();
+    view.addEventListener('click', function() {
+        view.focus();
+    }, false);
 };
 
 gf.inherits(gf.Game, Object, {
@@ -21687,7 +22024,8 @@ gf.inherits(gf.Game, Object, {
      * @private
      */
     _tick: function() {
-        this.emit('beforetick');
+        this.timings.tickStart = this.timings._timer.now();
+
         //start render loop
         window.requestAnimFrame(this._tick.bind(this));
 
@@ -21700,7 +22038,8 @@ gf.inherits(gf.Game, Object, {
         this.timings.renderStart = this.timings._timer.now();
         this.renderer.render(this.stage);
         this.timings.renderEnd = this.timings._timer.now();
-        this.emit('aftertick');
+
+        this.timings.tickEnd =  this.timings._timer.now();
     }
 });
 
@@ -21863,11 +22202,6 @@ gf.inherits(gf.GameState, gf.DisplayObjectContainer, {
         this.world.resize(this._game.renderer.width, this._game.renderer.height);
 
         this.camera.constrain(new gf.Rectangle(0, 0, this.world.realSize.x, this.world.realSize.y), true);
-
-        /* TODO: Autoplay music
-        if(this.world.properties.music) {
-            this.audio.play(this.world.properties.music, { loop: this.world.properties.music_loop === 'true' });
-        }*/
 
         return this;
     },
@@ -22085,20 +22419,26 @@ gf.input.Input = function(view) {
 
 gf.inherits(gf.input.Input, Object, {
     /**
-     * Prevents the default action of an event, and prevents it from bubbling up
-     * the DOM.
+     * Prevents the default action of an event
      *
      * @method preventDefault
      * @param event {DOMEvent} The event to prevent default actions for
      */
     preventDefault: function(e) {
-        if(e.stopPropagation) e.stopPropagation();
-        else e.cancelBubble = true;
-
         if(e.preventDefault) e.preventDefault();
         else e.returnValue = false;
 
         return false;
+    },
+    /**
+     * Prevents an event from bubbling up the DOM.
+     *
+     * @method stopPropogation
+     * @param event {DOMEvent} The event to prevent bubbling for
+     */
+    stopPropogation: function(e) {
+        if(e.stopPropagation) e.stopPropagation();
+        else e.cancelBubble = true;
     }
 });
 
@@ -22228,8 +22568,8 @@ gf.input.Keyboard = function(view) {
      */
     this._clearSq = null;
 
-    document.addEventListener('keydown', this.onKeyDown.bind(this), false);
-    document.addEventListener('keyup', this.onKeyUp.bind(this), false);
+    view.addEventListener('keydown', this.onKeyDown.bind(this), false);
+    view.addEventListener('keyup', this.onKeyUp.bind(this), false);
 };
 
 gf.inherits(gf.input.Keyboard, gf.input.Input, {
@@ -22548,7 +22888,8 @@ gf.input.getGpButtonName = function(i) {
     //setup default objects for each axis
     for(var bt in gf.input.GP_BUTTON) {
         this.buttons[gf.input.GP_BUTTON[bt]] = {
-            code: bt,
+            code: gf.input.GP_BUTTON[bt],
+            name: bt,
             down: false,
             value: 0
         };
@@ -22612,7 +22953,7 @@ gf.input.getGpAxisName = function(i) {
     gf.input.Input.call(this);
 
     /**
-     * The threshold at which we consider a stick "moved"
+     * The threshold at which we consider a stick moved from center
      *
      * @property threshold
      * @type Number
@@ -22632,8 +22973,8 @@ gf.input.getGpAxisName = function(i) {
     //setup default objects for each axis
     for(var ax in gf.input.GP_AXIS) {
         this.axes[gf.input.GP_AXIS[ax]] = {
-            code: ax,
-            negative: false,
+            code: gf.input.GP_AXIS[ax],
+            name: ax,
             value: 0
         };
     }
@@ -22649,19 +22990,18 @@ gf.inherits(gf.input.GamepadSticks, gf.input.Input, {
     pollStatus: function(pad) {
         for(var a = 0, al = pad.axes.length; a < al; ++a) {
             var ax = pad.axes[a],
-                neg = (ax < 0),
                 status = this.axes[a];
 
-            //if the difference between the last value and the new one is greater
-            //than the threashold set, call the event for that axis.
-            //We also always emit 0 because if your threshold is too high, it will
-            //never reset to 0
-            if(Math.abs(status.value - ax) >= this.threshold || (status.value !== 0 && ax === 0)) {
-                status.negative = neg;
+            //if we have moved off center by threshold, update the value
+            if(Math.abs(ax) >= this.threshold) {
                 status.value = ax;
-
-                this.emit(a, status);
             }
+            //otherwise, set it back to zero
+            else {
+                status.value = 0;
+            }
+
+            this.emit(a, status);
         }
     }
 });
@@ -23621,6 +23961,13 @@ gf.TiledLayer = function(layer) {
     this.alpha = layer.opacity;
     this.visible = layer.visible;
 
+    this.preRender = this.properties.preRender;
+    this.chunkSize = new gf.Vector(
+        this.properties.chunkSizeX || this.properties.chunkSize || 512,
+        this.properties.chunkSizeY || this.properties.chunkSize || 512
+    );
+    this._preRendered = false;
+
     this._tilePool = [];
     this._buffered = { left: false, right: false, top: false, bottom: false };
     this._panDelta = new gf.Vector();
@@ -23636,6 +23983,16 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
      * @param height {Number} The number of tiles in the Y direction to render
      */
     resize: function(width, height) {
+        if(this.preRender) {
+            if(!this._preRendered)
+                this._preRender();
+
+            return;
+        }
+
+        if(!this.tileSize)
+            this.tileSize = this.parent.tileSize;
+
         //clear all the visual tiles
         this.clearTiles();
 
@@ -23660,6 +24017,87 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         if(this.hasPhysics) {
             this.parent.parent.physics.invalidCollisions();
         }
+    },
+    //render the map onto a canvas once to use as a preRendered texture
+    _preRender: function() {
+        if(!this.visible)
+            return;
+
+        this._preRendered = true;
+        this.tileSize = this.chunkSize.clone();
+
+        var world = this.parent,
+            width = world.size.x * world.tileSize.x,
+            height = world.size.y * world.tileSize.y,
+            xChunks = Math.ceil(width / this.chunkSize.x),
+            yChunks = Math.ceil(height / this.chunkSize.y);
+
+        //for each chunk
+        for(var x = 0; x < xChunks; ++x) {
+            for(var y = 0; y < yChunks; ++y) {
+                var cw = (x === xChunks - 1) ? width - (x * this.chunkSize.x) : this.chunkSize.x,
+                    ch = (y === yChunks - 1) ? height - (y * this.chunkSize.y) : this.chunkSize.y;
+
+                this._preRenderChunk(x, y, cw, ch);
+            }
+        }
+    },
+    _preRenderChunk: function(cx, cy, w, h) {
+        var world = this.parent,
+            tsx = world.tileSize.x,
+            tsy = world.tileSize.y,
+            xTiles = w / tsx,
+            yTiles = h / tsy,
+            nx = (cx * this.chunkSize.x) % tsx,
+            ny = (cy * this.chunkSize.y) % tsy,
+            tx = Math.floor(cx * this.chunkSize.x / tsx),
+            ty = Math.floor(cy * this.chunkSize.y / tsy),
+            sx = world.size.x,
+            sy = world.size.y,
+            canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d');
+
+        canvas.width = w;
+        canvas.height = h;
+
+        //draw all the tiles in this chunk to the canvas
+        for(var x = 0; x < xTiles; ++x) {
+            for(var y = 0; y < yTiles; ++y) {
+                if(x + tx < sx && y + ty < sy) {
+                    var id = ((x + tx) + ((y + ty) * sx)),
+                        tid = this.tileIds[id],
+                        set = world.getTileset(tid),
+                        tex, frame;
+
+                    if(set) {
+                        tex = set.getTileTexture(tid);
+                        frame = tex.frame;
+
+                        ctx.drawImage(
+                            tex.baseTexture.source,
+                            frame.x,
+                            frame.y,
+                            frame.width,
+                            frame.height,
+                            (x * tsx) - nx + set.tileoffset.x,
+                            (y * tsy) - ny + set.tileoffset.y,
+                            frame.width,
+                            frame.height
+                        );
+                    }
+                }
+            }
+        }
+
+        //use the canvas as a texture for a tile to display
+        var tile = new gf.Tile(gf.Texture.fromCanvas(canvas));
+        tile.setPosition(cx * this.chunkSize.x, cy * this.chunkSize.y);
+
+        if(!this.tiles[cx])
+            this.tiles[cx] = {};
+
+        this.addChild(tile);
+        this.tiles[cx][cy] = tile;
     },
     _renderOrthoTiles: function(sx, sy, sw, sh) {
         //convert to tile coords
@@ -23942,6 +24380,9 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
      * @return {Layer} Returns itself for chainability
      */
     pan: function(dx, dy) {
+        if(this.preRender)
+            return;
+
         //isometric pan (just re render everything)
         if(this.parent.orientation === 'isometric')
             return this.resize(this._rendered.width, this._rendered.height);
@@ -24372,8 +24813,9 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                 obj.hitArea = props.hitArea;
                 obj.rotation = o.rotation;
                 obj.sensor = true;
-                obj.setPosition(o.x, o.y);
 
+                //these are treated as sensor bodies, so always enable physics
+                obj.setPosition(o.x, o.y);
                 obj.enablePhysics(game.physics);
                 if(this.parent._showPhysics)
                     obj.showPhysics();
@@ -24394,9 +24836,11 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                 obj.inertia = props.inertia || props.tileprops.inertia;
                 obj.friction = props.friction || props.tileprops.friction;
                 obj.sensor = props.sensor || props.tileprops.sensor;
-                obj.anchor.y = 1;
-                obj.anchor.x = this.parent.orientation === 'isometric' ? 0.5 : 0;
                 obj.setPosition(o.x, o.y);
+
+                var a = props.anchor || props.tileprops.anchor;
+                obj.anchor.y = a ? a[1] : 1;
+                obj.anchor.x = a ? a[0] : (this.parent.orientation === 'isometric' ? 0.5 : 0);
 
                 if(props.mass || props.tileprops.mass) {
                     obj.enablePhysics(game.physics);
@@ -24436,6 +24880,14 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                 obj.mouseover = this.onObjectEvent.bind(this, 'mouseover', obj);
                 obj.mouseupoutside = this.onObjectEvent.bind(this, 'mouseupoutside', obj);
             }
+
+            //set custom properties
+            obj.properties = {};
+            for(var t in props.tileprops)
+                obj.properties[t] = props.tileprops[t];
+            for(var k in props)
+                if(k !== 'tileprops')
+                    obj.properties[k] = props[k];
 
             this.addChild(obj);
         }

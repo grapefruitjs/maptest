@@ -15,9 +15,9 @@ define([
         'assets/maps/isometric_grass_and_water.json',
         'assets/maps/isometricBlocks.json',
         'assets/maps/Large_isometricBlocks.json',
-        'assets/maps/Large_isometricBlocks_wObject.json',*/
+        'assets/maps/Large_isometricBlocks_wObject.json',
         'assets/maps/Ortho_1_32__32.json',
-        'assets/maps/Ortho_1_32__32_objects.json',
+        'assets/maps/Ortho_1_32__32_objects.json',*/
         'assets/maps/darkworld.json'
     ];
 

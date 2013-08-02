@@ -8,30 +8,41 @@
   position: fixed;
   bottom: 0;
   width: 100%;
-  background: #222;
+  color: #cccccc;
+  background: #111111;
+  border-top: 3px solid #00bf00;
 }
 .gf_debug .gf_debug_menu {
   height: 32px;
-  background: #222222;
-  background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #000000), color-stop(1, #333333));
-  background: -ms-linear-gradient(bottom, #000000, #333333);
-  background: -moz-linear-gradient(center bottom, #000000 0%, #333333 100%);
-  background: -o-linear-gradient(#333333, #000000);
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#333333', endColorstr='#000000', GradientType=0);
-  color: #888;
+  background: #111111;
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #000000), color-stop(1, #444444));
+  background: -ms-linear-gradient(bottom, #000000, #444444);
+  background: -moz-linear-gradient(center bottom, #000000 0%, #444444 100%);
+  background: -o-linear-gradient(#444444, #000000);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#444444', endColorstr='#000000', GradientType=0);
+}
+.gf_debug .gf_debug_menu .gf_debug_head {
+  float: left;
+  padding: 0 10px;
+  height: 32px;
+  line-height: 32px;
+  border-right: 1px solid #444444;
 }
 .gf_debug .gf_debug_menu .gf_debug_stats {
-  float: right !important;
+  float: right;
+  padding: 0 0 0 10px;
+  height: 32px;
+  line-height: 32px;
 }
 .gf_debug .gf_debug_menu .gf_debug_stats .gf_debug_stats_item {
   float: left;
   padding: 0 10px;
   text-align: right;
-  cursor: default;
-  border-right: 1px solid #333;
+  border-right: 1px solid #444444;
 }
-.gf_debug .gf_debug_menu .gf_debug_stats .gf_debug_stats_item.spr {
+.gf_debug .gf_debug_menu .gf_debug_stats .gf_debug_stats_item.obj {
   width: 100px;
+  border: none;
 }
 .gf_debug .gf_debug_menu .gf_debug_menu_item {
   float: left;
@@ -39,33 +50,37 @@
   height: 32px;
   line-height: 32px;
   cursor: pointer;
-  border-right: 1px solid #333;
+  border-right: 1px solid #444444;
+}
+.gf_debug .gf_debug_menu .gf_debug_menu_item.active {
+  color: #00bf00;
+  background: #111111;
 }
 .gf_debug .gf_debug_panel {
   display: none;
   height: 200px;
+  overflow: auto;
 }
 /*
 Based on: http://cssdeck.com/labs/css-checkbox-styles
 */
+/* Status Orb (checkbox replacement) */
 input[type=checkbox] {
   visibility: hidden;
 }
-/* Status Orb (checkbox replacement) */
 .checkbox {
   position: relative;
   width: 28px;
   height: 28px;
-  background: #fcfff4;
-  margin: 2px;
-  background: -webkit-linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
-  background: -moz-linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
-  background: -o-linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
-  background: -ms-linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
-  background: linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
-  -webkit-border-radius: 50px;
-  -moz-border-radius: 50px;
-  border-radius: 50px;
+  background: #fcfef4;
+  background: -webkit-linear-gradient(top, #fcfef4 0%, #dfe5d7 40%, #b3bead 100%);
+  background: -moz-linear-gradient(top, #fcfef4 0%, #dfe5d7 40%, #b3bead 100%);
+  background: -o-linear-gradient(top, #fcfef4 0%, #dfe5d7 40%, #b3bead 100%);
+  background: -ms-linear-gradient(top, #fcfef4 0%, #dfe5d7 40%, #b3bead 100%);
+  background: linear-gradient(top, #fcfef4 0%, #dfe5d7 40%, #b3bead 100%);
+  -webkit-border-radius: 56px;
+  -moz-border-radius: 56px;
+  border-radius: 56px;
   -webkit-box-shadow: inset 0px 1px 1px #ffffff, 0px 1px 3px rgba(0, 0, 0, 0.5);
   -moz-box-shadow: inset 0px 1px 1px #ffffff, 0px 1px 3px rgba(0, 0, 0, 0.5);
   box-shadow: inset 0px 1px 1px #ffffff, 0px 1px 3px rgba(0, 0, 0, 0.5);
@@ -83,9 +98,9 @@ input[type=checkbox] {
   background: -moz-linear-gradient(center bottom, #222222 0%, #45484d 100%);
   background: -o-linear-gradient(#45484d, #222222);
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#45484d', endColorstr='#222222', GradientType=0);
-  -webkit-border-radius: 50px;
-  -moz-border-radius: 50px;
-  border-radius: 50px;
+  -webkit-border-radius: 56px;
+  -moz-border-radius: 56px;
+  border-radius: 56px;
   -webkit-box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.5), 0px 1px 3px #ffffff;
   -moz-box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.5), 0px 1px 3px #ffffff;
   box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.5), 0px 1px 3px #ffffff;
@@ -99,14 +114,14 @@ input[type=checkbox] {
   top: 2px;
   left: 2px;
   background: #00bf00;
-  background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #00bf00), color-stop(1, #009400));
-  background: -ms-linear-gradient(bottom, #00bf00, #009400);
-  background: -moz-linear-gradient(center bottom, #00bf00 0%, #009400 100%);
-  background: -o-linear-gradient(#009400, #00bf00);
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#009400', endColorstr='#00bf00', GradientType=0);
-  -webkit-border-radius: 50px;
-  -moz-border-radius: 50px;
-  border-radius: 50px;
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #00bf00), color-stop(1, #00bf00));
+  background: -ms-linear-gradient(bottom, #00bf00, #00bf00);
+  background: -moz-linear-gradient(center bottom, #00bf00 0%, #00bf00 100%);
+  background: -o-linear-gradient(#00bf00, #00bf00);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00bf00', endColorstr='#00bf00', GradientType=0);
+  -webkit-border-radius: 56px;
+  -moz-border-radius: 56px;
+  border-radius: 56px;
   -webkit-box-shadow: inset 0px 1px 1px #ffffff, 0px 1px 3px rgba(0, 0, 0, 0.5);
   -moz-box-shadow: inset 0px 1px 1px #ffffff, 0px 1px 3px rgba(0, 0, 0, 0.5);
   box-shadow: inset 0px 1px 1px #ffffff, 0px 1px 3px rgba(0, 0, 0, 0.5);
@@ -117,10 +132,10 @@ input[type=checkbox] {
 .checkbox span {
   position: relative;
   display: block;
-  top: -15px;
-  left: 35px;
+  top: -16px;
+  left: 32px;
   width: 250px;
-  color: #fcfff4;
+  color: #fcfef4;
   font-size: 1.1em;
 }
 .checkbox input[type=checkbox]:checked + label:after {
