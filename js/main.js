@@ -12,16 +12,7 @@ require([
             onAssetsComplete: function(game) {
             },
             onGameReady: function(game) {
-                gf.debug.show($('#game')[0], {
-                    game: game,
-                    fps: {
-                        left: 'auto',
-                        right: '5px',
-                        top: '85px'
-                    },
-                    gamepad: false
-                });
-                window.GAME = game;
+                gf.debug.show(window.GAME = game);
 
                 var $sw = $('#switch'),
                     $dirty = $('#dirty'),
@@ -37,6 +28,8 @@ require([
                     state.world.mousedown = mapDown;
                     state.world.mouseup = mapUp;
                     state.world.mousemove = mapMove;
+
+                    state.world.spawnObjects();
 
                     //for interactive maps
                     //state.world.on('tile.mousedown', tileDown);

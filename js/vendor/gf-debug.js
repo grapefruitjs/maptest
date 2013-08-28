@@ -4,7 +4,7 @@
  * Copyright (c) 2013, Chad Engler
  * https://github.com/grapefruitjs/gf-debug
  *
- * Compiled: 2013-07-09
+ * Compiled: 2013-08-06
  *
  * GrapeFruit Debug Plugin is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -12,1088 +12,916 @@
 (function(window, undefined) {
     var document = window.document;
 
-/*!
- * FPSMeter 0.3.1 - 9th May 2013
- * https://github.com/Darsain/fpsmeter
- *
- * Licensed under the MIT license.
- * http://opensource.org/licenses/MIT
- */
-;(function (w, undefined) {
-	'use strict';
-
-	/**
-	 * Create a new element.
-	 *
-	 * @param  {String} name Element type name.
-	 *
-	 * @return {Element}
-	 */
-	function newEl(name) {
-		return document.createElement(name);
-	}
-
-	/**
-	 * Apply theme CSS properties to element.
-	 *
-	 * @param  {Element} element DOM element.
-	 * @param  {Object}  theme   Theme object.
-	 *
-	 * @return {Element}
-	 */
-	function applyTheme(element, theme) {
-		for (var name in theme) {
-			try {
-				element.style[name] = theme[name];
-			} catch (e) {}
-		}
-		return element;
-	}
-
-	/**
-	 * Return type of the value.
-	 *
-	 * @param  {Mixed} value
-	 *
-	 * @return {String}
-	 */
-	function type(value) {
-		if (value == null) {
-			return String(value);
-		}
-
-		if (typeof value === 'object' || typeof value === 'function') {
-			return Object.prototype.toString.call(value).match(/\s([a-z]+)/i)[1].toLowerCase() || 'object';
-		}
-
-		return typeof value;
-	}
-
-	/**
-	 * Check whether the value is in an array.
-	 *
-	 * @param  {Mixed} value
-	 * @param  {Array} array
-	 *
-	 * @return {Integer} Array index or -1 when not found.
-	 */
-	function inArray(value, array) {
-		if (type(array) !== 'array') {
-			return -1;
-		}
-		if (array.indexOf) {
-			return array.indexOf(value);
-		}
-		for (var i = 0, l = array.length; i < l; i++) {
-			if (array[i] === value) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	/**
-	 * Poor man's deep object extend.
-	 *
-	 * Example:
-	 *   extend({}, defaults, options);
-	 *
-	 * @return {Void}
-	 */
-	function extend() {
-		var args = arguments;
-		for (var key in args[1]) {
-			if (args[1].hasOwnProperty(key)) {
-				switch (type(args[1][key])) {
-					case 'object':
-						args[0][key] = extend({}, args[0][key], args[1][key]);
-						break;
-
-					case 'array':
-						args[0][key] = args[1][key].slice(0);
-						break;
-
-					default:
-						args[0][key] = args[1][key];
-				}
-			}
-		}
-		return args.length > 2 ?
-			extend.apply(null, [args[0]].concat(Array.prototype.slice.call(args, 2))) :
-			args[0];
-	}
-
-	/**
-	 * Convert HSL color to HEX string.
-	 *
-	 * @param  {Array} hsl Array with [hue, saturation, lightness].
-	 *
-	 * @return {Array} Array with [red, green, blue].
-	 */
-	function hslToHex(h, s, l) {
-		var r, g, b;
-		var v, min, sv, sextant, fract, vsf;
-
-		if (l <= 0.5) {
-			v = l * (1 + s);
-		} else {
-			v = l + s - l * s;
-		}
-
-		if (v === 0) {
-			return '#000';
-		} else {
-			min = 2 * l - v;
-			sv = (v - min) / v;
-			h = 6 * h;
-			sextant = Math.floor(h);
-			fract = h - sextant;
-			vsf = v * sv * fract;
-			if (sextant === 0 || sextant === 6) {
-				r = v;
-				g = min + vsf;
-				b = min;
-			} else if (sextant === 1) {
-				r = v - vsf;
-				g = v;
-				b = min;
-			} else if (sextant === 2) {
-				r = min;
-				g = v;
-				b = min + vsf;
-			} else if (sextant === 3) {
-				r = min;
-				g = v - vsf;
-				b = v;
-			} else if (sextant === 4) {
-				r = min + vsf;
-				g = min;
-				b = v;
-			} else {
-				r = v;
-				g = min;
-				b = v - vsf;
-			}
-			return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
-		}
-	}
-
-	/**
-	 * Helper function for hslToHex.
-	 */
-	function componentToHex(c) {
-		c = Math.round(c * 255).toString(16);
-		return c.length === 1 ? '0' + c : c;
-	}
-
-	/**
-	 * Manage element event listeners.
-	 *
-	 * @param  {Node}     element
-	 * @param  {Event}    eventName
-	 * @param  {Function} handler
-	 * @param  {Bool}     remove
-	 *
-	 * @return {Void}
-	 */
-	function listener(element, eventName, handler, remove) {
-		if (element.addEventListener) {
-			element[remove ? 'removeEventListener' : 'addEventListener'](eventName, handler, false);
-		} else if (element.attachEvent) {
-			element[remove ? 'detachEvent' : 'attachEvent']('on' + eventName, handler);
-		}
-	}
-
-	// Preferred timing funtion
-	var getTime;
-	(function () {
-		var perf = w.performance;
-		if (perf && (perf.now || perf.webkitNow)) {
-			var perfNow = perf.now ? 'now' : 'webkitNow';
-			getTime = perf[perfNow].bind(perf);
-		} else {
-			getTime = function () {
-				return +new Date();
-			};
-		}
-	}());
-
-	// Local WindowAnimationTiming interface polyfill
-	var cAF = w.cancelAnimationFrame || w.cancelRequestAnimationFrame;
-	var rAF = w.requestAnimationFrame;
-	(function () {
-		var vendors = ['moz', 'webkit', 'o'];
-		var lastTime = 0;
-
-		// For a more accurate WindowAnimationTiming interface implementation, ditch the native
-		// requestAnimationFrame when cancelAnimationFrame is not present (older versions of Firefox)
-		for (var i = 0, l = vendors.length; i < l && !cAF; ++i) {
-			cAF = w[vendors[i]+'CancelAnimationFrame'] || w[vendors[i]+'CancelRequestAnimationFrame'];
-			rAF = cAF && w[vendors[i]+'RequestAnimationFrame'];
-		}
-
-		if (!cAF) {
-			rAF = function (callback) {
-				var currTime = getTime();
-				var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-				lastTime = currTime + timeToCall;
-				return w.setTimeout(function () { callback(currTime + timeToCall); }, timeToCall);
-			};
-
-			cAF = function (id) {
-				clearTimeout(id);
-			};
-		}
-	}());
-
-	// Property name for assigning element text content
-	var textProp = type(document.createElement('div').textContent) === 'string' ? 'textContent' : 'innerText';
-
-	/**
-	 * FPSMeter class.
-	 *
-	 * @param {Element} anchor  Element to append the meter to. Default is document.body.
-	 * @param {Object}  options Object with options.
-	 */
-	function FPSMeter(anchor, options) {
-		// Optional arguments
-		if (type(anchor) === 'object' && anchor.nodeType === undefined) {
-			options = anchor;
-			anchor = document.body;
-		}
-		if (!anchor) {
-			anchor = document.body;
-		}
-
-		// Private properties
-		var self = this;
-		var o = extend({}, FPSMeter.defaults, options || {});
-
-		var el = {};
-		var cols = [];
-		var theme, heatmaps;
-		var heatDepth = 100;
-		var heating = [];
-
-		var thisFrameTime = 0;
-		var frameTime = o.threshold;
-		var frameStart = 0;
-		var lastLoop = getTime() - frameTime;
-		var time;
-
-		var fpsHistory = [];
-		var durationHistory = [];
-
-		var frameID, renderID;
-		var showFps = o.show === 'fps';
-		var graphHeight, count, i, j;
-
-		// Exposed properties
-		self.options = o;
-		self.fps = 0;
-		self.duration = 0;
-		self.isPaused = 0;
-
-		/**
-		 * Tick start for measuring the actual rendering duration.
-		 *
-		 * @return {Void}
-		 */
-		self.tickStart = function () {
-			frameStart = getTime();
-		};
-
-		/**
-		 * FPS tick.
-		 *
-		 * @return {Void}
-		 */
-		self.tick = function () {
-			time = getTime();
-			thisFrameTime = time - lastLoop;
-			frameTime += (thisFrameTime - frameTime) / o.smoothing;
-			self.fps = 1000 / frameTime;
-			self.duration = frameStart < lastLoop ? frameTime : time - frameStart;
-			lastLoop = time;
-		};
-
-		/**
-		 * Pause display rendering.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.pause = function () {
-			if (frameID) {
-				self.isPaused = 1;
-				clearTimeout(frameID);
-				cAF(frameID);
-				cAF(renderID);
-				frameID = renderID = 0;
-			}
-			return self;
-		};
-
-		/**
-		 * Resume display rendering.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.resume = function () {
-			if (!frameID) {
-				self.isPaused = 0;
-				requestRender();
-			}
-			return self;
-		};
-
-		/**
-		 * Update options.
-		 *
-		 * @param {String} name  Option name.
-		 * @param {Mixed}  value New value.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.set = function (name, value) {
-			o[name] = value;
-			showFps = o.show === 'fps';
-
-			// Rebuild or reposition elements when specific option has been updated
-			if (inArray(name, rebuilders) !== -1) {
-				createMeter();
-			}
-			if (inArray(name, repositioners) !== -1) {
-				positionMeter();
-			}
-			return self;
-		};
-
-		/**
-		 * Change meter into rendering duration mode.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.showDuration = function () {
-			self.set('show', 'ms');
-			return self;
-		};
-
-		/**
-		 * Change meter into FPS mode.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.showFps = function () {
-			self.set('show', 'fps');
-			return self;
-		};
-
-		/**
-		 * Toggles between show: 'fps' and show: 'duration'.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.toggle = function () {
-			self.set('show', showFps ? 'ms' : 'fps');
-			return self;
-		};
-
-		/**
-		 * Hide the FPSMeter. Also pauses the rendering.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.hide = function () {
-			self.pause();
-			el.container.style.display = 'none';
-			return self;
-		};
-
-		/**
-		 * Show the FPSMeter. Also resumes the rendering.
-		 *
-		 * @return {Object} FPSMeter instance.
-		 */
-		self.show = function () {
-			self.resume();
-			el.container.style.display = 'block';
-			return self;
-		};
-
-		/**
-		 * Check the current FPS and save it in history.
-		 *
-		 * @return {Void}
-		 */
-		function historyTick() {
-			for (i = o.history; i--;) {
-				fpsHistory[i] = i === 0 ? self.fps : fpsHistory[i-1];
-				durationHistory[i] = i === 0 ? self.duration : durationHistory[i-1];
-			}
-		}
-
-		/**
-		 * Returns heat hex color based on values passed.
-		 *
-		 * @param  {Integer} heatmap
-		 * @param  {Integer} value
-		 * @param  {Integer} min
-		 * @param  {Integer} max
-		 *
-		 * @return {Integer}
-		 */
-		function getHeat(heatmap, value, min, max) {
-			return heatmaps[0|heatmap][Math.round(Math.min((value - min) / (max - min) * heatDepth, heatDepth))];
-		}
-
-		/**
-		 * Update counter number and legend.
-		 *
-		 * @return {Void}
-		 */
-		function updateCounter() {
-			// Update legend only when changed
-			if (el.legend.fps !== showFps) {
-				el.legend.fps = showFps;
-				el.legend[textProp] = showFps ? 'FPS' : 'ms';
-			}
-			// Update counter with a nicely formated & readable number
-			count = showFps ? self.fps : self.duration;
-			el.count[textProp] = count > 999 ? '999+' : count.toFixed(count > 99 ? 0 : o.decimals);
-		}
-
-		/**
-		 * Render current FPS state.
-		 *
-		 * @return {Void}
-		 */
-		function render() {
-			time = getTime();
-			// If renderer stopped reporting, do a simulated drop to 0 fps
-			if (lastLoop < time - o.threshold) {
-				self.fps -= self.fps / Math.max(1, o.smoothing * 60 / o.interval);
-				self.duration = 1000 / self.fps;
-			}
-
-			historyTick();
-			updateCounter();
-
-			// Apply heat to elements
-			if (o.heat) {
-				if (heating.length) {
-					for (i = heating.length; i--;) {
-						heating[i].el.style[theme[heating[i].name].heatOn] = showFps ?
-							getHeat(theme[heating[i].name].heatmap, self.fps, 0, o.maxFps) :
-							getHeat(theme[heating[i].name].heatmap, self.duration, o.threshold, 0);
-					}
-				}
-
-				if (el.graph && theme.column.heatOn) {
-					for (i = cols.length; i--;) {
-						cols[i].style[theme.column.heatOn] = showFps ?
-							getHeat(theme.column.heatmap, fpsHistory[i], 0, o.maxFps) :
-							getHeat(theme.column.heatmap, durationHistory[i], o.threshold, 0);
-					}
-				}
-			}
-
-			// Update graph columns height
-			if (el.graph) {
-				for (j = 0; j < o.history; j++) {
-					cols[j].style.height = (showFps ?
-						(fpsHistory[j] ? Math.round(graphHeight / o.maxFps * Math.min(fpsHistory[j], o.maxFps)) : 0) :
-						(durationHistory[j] ? Math.round(graphHeight / o.threshold * Math.min(durationHistory[j], o.threshold)) : 0)
-					) + 'px';
-				}
-			}
-		}
-
-		/**
-		 * Request rendering loop.
-		 *
-		 * @return {Int} Animation frame index.
-		 */
-		function requestRender() {
-			if (o.interval < 20) {
-				frameID = rAF(requestRender);
-				render();
-			} else {
-				frameID = setTimeout(requestRender, o.interval);
-				renderID = rAF(render);
-			}
-		}
-
-		/**
-		 * Meter events handler.
-		 *
-		 * @return {Void}
-		 */
-		function eventHandler(event) {
-			event = event || window.event;
-			if (event.preventDefault) {
-				event.preventDefault();
-				event.stopPropagation();
-			} else {
-				event.returnValue = false;
-				event.cancelBubble = true;
-			}
-			self.toggle();
-		}
-
-		/**
-		 * Destroys the current FPSMeter instance.
-		 *
-		 * @return {Void}
-		 */
-		self.destroy = function () {
-			// Stop rendering
-			self.pause();
-			// Remove elements
-			removeMeter();
-			// Stop listening
-			self.tick = self.tickStart = function () {};
-		};
-
-		/**
-		 * Remove meter element.
-		 *
-		 * @return {Void}
-		 */
-		function removeMeter() {
-			// Unbind listeners
-			if (o.toggleOn) {
-				listener(el.container, o.toggleOn, eventHandler, 1);
-			}
-			// Detach element
-			anchor.removeChild(el.container);
-		}
-
-		/**
-		 * Sets the theme, and generates heatmaps when needed.
-		 */
-		function setTheme() {
-			theme = FPSMeter.theme[o.theme];
-
-			// Generate heatmaps
-			heatmaps = theme.compiledHeatmaps || [];
-			if (!heatmaps.length && theme.heatmaps.length) {
-				for (j = 0; j < theme.heatmaps.length; j++) {
-					heatmaps[j] = [];
-					for (i = 0; i <= heatDepth; i++) {
-						heatmaps[j][i] = hslToHex(0.33 / heatDepth * i, theme.heatmaps[j].saturation, theme.heatmaps[j].lightness);
-					}
-				}
-				theme.compiledHeatmaps = heatmaps;
-			}
-		}
-
-		/**
-		 * Creates and attaches the meter element.
-		 *
-		 * @return {Void}
-		 */
-		function createMeter() {
-			// Remove old meter if present
-			if (el.container) {
-				removeMeter();
-			}
-
-			// Set theme
-			setTheme();
-
-			// Create elements
-			el.container = applyTheme(newEl('div'), theme.container);
-			el.count = el.container.appendChild(applyTheme(newEl('div'), theme.count));
-			el.legend = el.container.appendChild(applyTheme(newEl('div'), theme.legend));
-			el.graph = o.graph ? el.container.appendChild(applyTheme(newEl('div'), theme.graph)) : 0;
-
-			// Add elements to heating array
-			heating.length = 0;
-			for (var key in el) {
-				if (el[key] && theme[key].heatOn) {
-					heating.push({
-						name: key,
-						el: el[key]
-					});
-				}
-			}
-
-			// Graph
-			cols.length = 0;
-			if (el.graph) {
-				// Create graph
-				el.graph.style.width = (o.history * theme.column.width + (o.history - 1) * theme.column.spacing) + 'px';
-
-				// Add columns
-				for (i = 0; i < o.history; i++) {
-					cols[i] = el.graph.appendChild(applyTheme(newEl('div'), theme.column));
-					cols[i].style.position = 'absolute';
-					cols[i].style.bottom = 0;
-					cols[i].style.right = (i * theme.column.width + i * theme.column.spacing) + 'px';
-					cols[i].style.width = theme.column.width + 'px';
-					cols[i].style.height = '0px';
-				}
-			}
-
-			// Set the initial state
-			positionMeter();
-			updateCounter();
-
-			// Append container to anchor
-			anchor.appendChild(el.container);
-
-			// Retrieve graph height after it was appended to DOM
-			if (el.graph) {
-				graphHeight = el.graph.clientHeight;
-			}
-
-			// Add event listeners
-			if (o.toggleOn) {
-				if (o.toggleOn === 'click') {
-					el.container.style.cursor = 'pointer';
-				}
-				listener(el.container, o.toggleOn, eventHandler);
-			}
-		}
-
-		/**
-		 * Positions the meter based on options.
-		 *
-		 * @return {Void}
-		 */
-		function positionMeter() {
-			applyTheme(el.container, o);
-		}
-
-		/**
-		 * Construct.
-		 */
-		(function () {
-			// Create meter element
-			createMeter();
-			// Start rendering
-			requestRender();
-		}());
-	}
-
-	// Expose the extend function
-	FPSMeter.extend = extend;
-
-	// Expose the FPSMeter class
-	window.FPSMeter = FPSMeter;
-
-	// Default options
-	FPSMeter.defaults = {
-		interval:  100,     // Update interval in milliseconds.
-		smoothing: 10,      // Spike smoothing strength. 1 means no smoothing.
-		show:      'fps',   // Whether to show 'fps', or 'ms' = frame duration in milliseconds.
-		toggleOn:  'click', // Toggle between show 'fps' and 'ms' on this event.
-		decimals:  1,       // Number of decimals in FPS number. 1 = 59.9, 2 = 59.94, ...
-		maxFps:    60,      // Max expected FPS value.
-		threshold: 100,     // Minimal tick reporting interval in milliseconds.
-
-		// Meter position
-		position: 'absolute', // Meter position.
-		zIndex:   10,         // Meter Z index.
-		left:     '5px',      // Meter left offset.
-		top:      '5px',      // Meter top offset.
-		right:    'auto',     // Meter right offset.
-		bottom:   'auto',     // Meter bottom offset.
-		margin:   '0 0 0 0',  // Meter margin. Helps with centering the counter when left: 50%;
-
-		// Theme
-		theme: 'dark', // Meter theme. Build in: 'dark', 'light', 'transparent', 'colorful'.
-		heat:  0,      // Allow themes to use coloring by FPS heat. 0 FPS = red, maxFps = green.
-
-		// Graph
-		graph:   0, // Whether to show history graph.
-		history: 20 // How many history states to show in a graph.
-	};
-
-	// Option names that trigger FPSMeter rebuild or reposition when modified
-	var rebuilders = [
-		'toggleOn',
-		'theme',
-		'heat',
-		'graph',
-		'history'
-	];
-	var repositioners = [
-		'position',
-		'zIndex',
-		'left',
-		'top',
-		'right',
-		'bottom',
-		'margin'
-	];
-}(window));
-;(function (w, FPSMeter, undefined) {
-	'use strict';
-
-	// Themes object
-	FPSMeter.theme = {};
-
-	// Base theme with layout, no colors
-	var base = FPSMeter.theme.base = {
-		heatmaps: [],
-		container: {
-			// Settings
-			heatOn: null,
-			heatmap: null,
-
-			// Styles
-			padding: '5px',
-			minWidth: '95px',
-			height: '30px',
-			lineHeight: '30px',
-			textAlign: 'right',
-			textShadow: 'none'
-		},
-		count: {
-			// Settings
-			heatOn: null,
-			heatmap: null,
-
-			// Styles
-			position: 'absolute',
-			top: 0,
-			right: 0,
-			padding: '5px 10px',
-			height: '30px',
-			fontSize: '24px',
-			fontFamily: 'Consolas, Andale Mono, monospace',
-			zIndex: 2
-		},
-		legend: {
-			// Settings
-			heatOn: null,
-			heatmap: null,
-
-			// Styles
-			position: 'absolute',
-			top: 0,
-			left: 0,
-			padding: '5px 10px',
-			height: '30px',
-			fontSize: '12px',
-			lineHeight: '32px',
-			fontFamily: 'sans-serif',
-			textAlign: 'left',
-			zIndex: 2
-		},
-		graph: {
-			// Settings
-			heatOn: null,
-			heatmap: null,
-
-			// Styles
-			position: 'relative',
-			boxSizing: 'padding-box',
-			MozBoxSizing: 'padding-box',
-			height: '100%',
-			zIndex: 1
-		},
-		column: {
-			// Settings
-			width: 4,
-			spacing: 1,
-			heatOn: null,
-			heatmap: null
-		}
-	};
-
-	// Dark theme
-	FPSMeter.theme.dark = FPSMeter.extend({}, base, {
-		heatmaps: [{
-			saturation: 0.8,
-			lightness: 0.8
-		}],
-		container: {
-			background: '#222',
-			color: '#fff',
-			border: '1px solid #1a1a1a',
-			textShadow: '1px 1px 0 #222'
-		},
-		count: {
-			heatOn: 'color'
-		},
-		column: {
-			background: '#3f3f3f'
-		}
-	});
-
-	// Light theme
-	FPSMeter.theme.light = FPSMeter.extend({}, base, {
-		heatmaps: [{
-			saturation: 0.5,
-			lightness: 0.5
-		}],
-		container: {
-			color: '#666',
-			background: '#fff',
-			textShadow: '1px 1px 0 rgba(255,255,255,.5), -1px -1px 0 rgba(255,255,255,.5)',
-			boxShadow: '0 0 0 1px rgba(0,0,0,.1)'
-		},
-		count: {
-			heatOn: 'color'
-		},
-		column: {
-			background: '#eaeaea'
-		}
-	});
-
-	// Colorful theme
-	FPSMeter.theme.colorful = FPSMeter.extend({}, base, {
-		heatmaps: [{
-			saturation: 0.5,
-			lightness: 0.6
-		}],
-		container: {
-			heatOn: 'backgroundColor',
-			background: '#888',
-			color: '#fff',
-			textShadow: '1px 1px 0 rgba(0,0,0,.2)',
-			boxShadow: '0 0 0 1px rgba(0,0,0,.1)'
-		},
-		column: {
-			background: '#777',
-			backgroundColor: 'rgba(0,0,0,.2)'
-		}
-	});
-
-	// Transparent theme
-	FPSMeter.theme.transparent = FPSMeter.extend({}, base, {
-		heatmaps: [{
-			saturation: 0.8,
-			lightness: 0.5
-		}],
-		container: {
-			padding: 0,
-			color: '#fff',
-			textShadow: '1px 1px 0 rgba(0,0,0,.5)'
-		},
-		count: {
-			padding: '0 5px',
-			height: '40px',
-			lineHeight: '40px'
-		},
-		legend: {
-			padding: '0 5px',
-			height: '40px',
-			lineHeight: '42px'
-		},
-		graph: {
-			height: '40px'
-		},
-		column: {
-			width: 5,
-			background: '#999',
-			heatOn: 'backgroundColor',
-			opacity: 0.5
-		}
-	});
-}(window, FPSMeter));
-var d = d || {}; //this makes jshint happy
-
-function EntityTracker(cont, ent) {
-    this.entity = ent;
-
-    //create DOM elements
-    this.box = document.createElement('div');
-    d.setStyle(this.box, {
-        position: 'absolute',
-        top: '25px',
-        left: '5px',
-        color: '#FFF',
-        border: 'solid 1px #1A1A1A',
-        'z-index': 10,
-        'font-size': '0.9em',
-        'background-color': '#222'
-    });
-
-    this.label = document.createElement('span');
-    this.label.textContent = 'Player Position: ';
-
-    this.value = document.createElement('span');
-    this.value.textContent = 'X: 0, Y: 0';
-
-    this.label.appendChild(document.createElement('br'));
-    this.label.appendChild(this.value);
-
-    this.box.appendChild(this.label);
-
-    //append us to the parent
-    cont.appendChild(this.box);
-}
-
-EntityTracker.prototype.tick = function() {
-    this.value.textContent = 'X: ' + this.entity.position.x.toFixed(2) +
-                            ', Y: ' + this.entity.position.y.toFixed(2);
+//register the plugin to grapefruit
+gf.plugin.register({}, 'debug');
+
+//the version of this plugin. Placed in by grunt when built you can change
+//this value in the package.json (under version)
+gf.debug.version = '0.0.1';
+
+//the version of gf that is required for this plugin to function correctly.
+//Placed in by grunt when built you can change this value in the package.json (under engines.gf)
+gf.debug.gfVersion = '0.0.x';
+
+//on tick funciton to replace the gf.Game.prototype._tick function with
+//will call _super to run the normal tick, then tick the panels as well
+gf.debug.onTick = function() {
+    this._super();
+
+    gf.debug._statsTick();
+
+    if(gf.debug.panels) {
+        gf.debug.panels.map.tick();
+        gf.debug.panels.performance.tick();
+        gf.debug.panels.sprites.tick();
+    }
 };
-var d = d || {}; //this makes jshint happy
 
-function getGpButtonName(v, i) {
-    return '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + gf.input.getGpButtonName(i) + ': ' + v.toFixed(2);
-}
+/**
+ * Shows the debug bar using the specified game information
+ *
+ * @method show
+ * @param game {gf.Game} the game to debug
+ */
+gf.debug.show = function(game) {
+    if(!game || !(game instanceof gf.Game))
+        throw 'Please pass a game instance to gf.debug.show!';
 
-function getGpAxisName(v, i) {
-    return '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + gf.input.getGpAxisName(i) + ': ' + v.toFixed(2);
-}
+    if(this.game)
+        throw 'Already debugging a game instance!';
 
-function GamepadTracker(cont, game) {
     this.game = game;
 
-    //create DOM elements
-    this.box = document.createElement('div');
-    d.setStyle(this.box, {
-        position: 'absolute',
-        top: '50px',
-        left: '5px',
-        color: '#FFF',
-        border: 'solid 1px #1A1A1A',
-        'z-index': 10,
-        'font-size': '0.9em',
-        'background-color': '#222'
+    this.panels = {
+        map: new gf.debug.MapPanel(game),
+        sprites: new gf.debug.SpritesPanel(game),
+        gamepad: new gf.debug.GamepadPanel(game),
+        performance: new gf.debug.PerformancePanel(game)
+    };
+
+    //patch the tick method
+    gf.plugin.patch(gf.Game, '_tick', this.onTick);
+
+    this.logObjectCountEvent = false;
+
+    //add element to the page
+    document.body.appendChild(this._createElement());
+
+    this._bindEvents();
+};
+
+/**
+ * Shows some event occuring on the timeline of the performance graph
+ * which makes it easy to see what is impacting performance and when
+ *
+ * @method logEvent
+ * @param name {String} the event name to show on the graph
+ */
+gf.debug.logEvent = function(name) {
+    if(this.panels && this.panels.performance)
+        this.panels.performance.logEvent(name);
+};
+
+gf.debug._bindEvents = function() {
+    var activePanel,
+        self = this;
+
+    this.ui.bindDelegate(this._bar, 'click', 'gf_debug_menu_item', function(e) {
+        var panel = self.panels[e.target.className.replace(/gf_debug_menu_item|active/g, '').trim()];
+
+        if(!panel)
+            return;
+
+        if(activePanel) {
+            activePanel.toggle();
+            self.ui.removeClass(activePanel._menuItem, 'active');
+
+            if(activePanel.name === panel.name) {
+                activePanel = null;
+                return;
+            }
+        }
+
+        if(panel.name === 'performance')
+            panel.active = true;
+        else
+            self.panels.performance.active = false;
+
+        self.ui.addClass(e.target, 'active');
+        panel.toggle();
+        activePanel = panel;
     });
+};
 
-    this.value = document.createElement('span');
-    this.value.textContent = 'X: 0, Y: 0';
+gf.debug._createElement = function() {
+    var c = this._container = document.createElement('div'),
+        bar = this._bar = document.createElement('div');
 
-    this.box.appendChild(this.value);
+    //container
+    this.ui.addClass(c, 'gf_debug');
+    c.appendChild(bar);
 
-    //append us to the parent
-    cont.appendChild(this.box);
-}
+    //the menu bar
+    this.ui.addClass(bar, 'gf_debug_menu');
+    bar.appendChild(this._createMenuHead());
+    bar.appendChild(this._createMenuStats());
 
-GamepadTracker.prototype.tick = function() {
-    this.value.innerHTML = '';
+    //add the panels
+    for(var p in this.panels) {
+        bar.appendChild(this.panels[p].createMenuElement());
+        c.appendChild(this.panels[p].createPanelElement());
+    }
 
-    if(this.game.input.gamepad.pads && this.game.input.gamepad.pads.length) {
-        for(var i = 0, il = this.game.input.gamepad.pads.length; i < il; ++i) {
-            var pad = this.game.input.gamepad.pads[i];
+    return c;
+};
 
-            this.value.innerHTML += 'Gamepad: [' + pad.index + '] ' + pad.id + '<br/>';
+gf.debug._createMenuHead = function() {
+    var div = document.createElement('div');
 
-            this.value.innerHTML += '&nbsp;&nbsp;&nbsp;Buttons:<br/>' +
-                pad.buttons.map(getGpButtonName).join('<br/>') +
-                '<br/>';
+    this.ui.addClass(div, 'gf_debug_head');
+    this.ui.setText(div, 'Gf Debug (' + this.game.renderMethod + '):');
 
-            this.value.innerHTML += '&nbsp;&nbsp;&nbsp;Axes:<br/>' +
-                pad.axes.map(getGpAxisName).join('<br/>') +
-                '<br/>';
+    return div;
+};
+
+gf.debug._createMenuStats = function() {
+    this._stats = {};
+
+    var div = document.createElement('div'),
+        fps = this._stats.fps = document.createElement('div'),
+        ms = this._stats.ms = document.createElement('div'),
+        obj = this._stats.obj = document.createElement('div');
+
+    this.ui.addClass(div, 'gf_debug_stats');
+
+    this.ui.addClass(ms, 'gf_debug_stats_item ms');
+    this.ui.setHtml(ms, '<span>0</span> ms');
+    div.appendChild(ms);
+
+    this.ui.addClass(fps, 'gf_debug_stats_item fps');
+    this.ui.setHtml(fps, '<span>0</span> fps');
+    div.appendChild(fps);
+
+    this.ui.addClass(obj, 'gf_debug_stats_item obj');
+    this.ui.setHtml(obj, '<span>0</span> objects');
+    div.appendChild(obj);
+
+    return div;
+};
+
+gf.debug._statsTick = function() {
+    var ms = this.game.timings.tickEnd - this.game.timings.tickStart,
+        fps = 1000/ms;
+
+    fps = fps > 60 ? 60 : fps;
+
+    //update stats
+    this.ui.setText(this._stats.ms.firstElementChild, ms.toFixed(2));
+    this.ui.setText(this._stats.fps.firstElementChild, fps.toFixed(2));
+};
+
+//update the number of sprites every couple seconds (instead of every frame)
+//since it is so expensive
+setInterval(function() {
+    if(gf.debug._stats && gf.debug._stats.obj) {
+        //count objects in active state
+        var c = 0,
+            s = gf.debug.game.activeState,
+            wld = s.world,
+            cam = s.camera;
+
+        while(wld) {
+            c++;
+            wld = wld._iNext;
+        }
+
+        while(cam) {
+            c++;
+            cam = cam._iNext;
+        }
+
+        gf.debug.ui.setText(gf.debug._stats.obj.firstElementChild, c);
+
+        //log the event to the performance graph
+        if(gf.debug.logObjectCountEvent)
+            gf.debug.logEvent('debug_count_objects');
+    }
+}, 2000);
+gf.debug.Panel = function(game) {
+    this.game = game;
+    this.name = '';
+    this.title = '';
+};
+
+gf.inherits(gf.debug.Panel, Object, {
+    //builds the html for a panel
+    createPanelElement: function() {
+        var div = this._panel = document.createElement('div');
+        gf.debug.ui.addClass(div, 'gf_debug_panel');
+        gf.debug.ui.addClass(div, this.name);
+
+        return div;
+    },
+    //builds the html for this panels menu item
+    createMenuElement: function() {
+        var div = this._menuItem = document.createElement('div');
+        gf.debug.ui.addClass(div, 'gf_debug_menu_item ' + this.name);
+        gf.debug.ui.setText(div, this.title);
+
+        return div;
+    },
+    toggle: function() {
+        if(this._panel.style.display === 'block')
+            this.hide();
+        else
+            this.show();
+    },
+    show: function() {
+        gf.debug.ui.setStyle(this._panel, 'display', 'block');
+    },
+    hide: function() {
+        gf.debug.ui.setStyle(this._panel, 'display', 'none');
+    }
+});
+gf.debug.GamepadPanel = function(game) {
+    gf.debug.Panel.call(this, game);
+
+    this.name = 'gamepad';
+    this.title = 'Gamepad';
+
+    this.gamepad = new gf.debug.Gamepad();
+    this.bindEvents();
+};
+
+gf.inherits(gf.debug.GamepadPanel, gf.debug.Panel, {
+    createPanelElement: function() {
+        var div = gf.debug.Panel.prototype.createPanelElement.call(this);
+
+        div.appendChild(this.gamepad.element);
+        window.console.log(this.gamepad.element);
+
+        return div;
+    },
+    bindEvents: function() {
+        var game = this.game,
+            pad = this.gamepad;
+
+        //bind all buttons
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.FACE_1, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.FACE_2, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.FACE_3, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.FACE_4, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.LEFT_SHOULDER, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.RIGHT_SHOULDER, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.LEFT_TRIGGER, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.RIGHT_TRIGGER, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.SELECT, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.START, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.LEFT_ANALOGUE_STICK, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.RIGHT_ANALOGUE_STICK, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.PAD_TOP, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.PAD_BOTTOM, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.PAD_LEFT, pad.updateButton.bind(pad));
+        game.input.gamepad.buttons.on(gf.input.GP_BUTTON.PAD_RIGHT, pad.updateButton.bind(pad));
+
+        //bind all sticks
+        game.input.gamepad.sticks.on(gf.input.GP_AXIS.LEFT_ANALOGUE_HOR, pad.updateAxis.bind(pad));
+        game.input.gamepad.sticks.on(gf.input.GP_AXIS.LEFT_ANALOGUE_VERT, pad.updateAxis.bind(pad));
+        game.input.gamepad.sticks.on(gf.input.GP_AXIS.RIGHT_ANALOGUE_HOR, pad.updateAxis.bind(pad));
+        game.input.gamepad.sticks.on(gf.input.GP_AXIS.RIGHT_ANALOGUE_VERT, pad.updateAxis.bind(pad));
+    }
+});
+gf.debug.PerformancePanel = function(game) {
+    gf.debug.Panel.call(this, game);
+
+    this.name = 'performance';
+    this.title = 'Performance';
+    this.eventQueue = [];
+    this.active = false;
+};
+
+gf.inherits(gf.debug.PerformancePanel, gf.debug.Panel, {
+    createPanelElement: function() {
+        var div = gf.debug.Panel.prototype.createPanelElement.call(this);
+
+        this.graph = new gf.debug.Graph(div, window.innerWidth - 10, 250 - 5, {
+            input: 'rgba(80, 220, 80, 1)',
+            camera: 'rgba(80, 80, 220, 1)',
+            phys: 'rgba(80, 220, 200, 1)',
+            draw: 'rgba(220, 80, 80, 1)',
+            event: 'rgba(200, 200, 200, 0.6)'
+        });
+        this.graph.max = 50;
+
+        return div;
+    },
+    tick: function() {
+        if(!this.active)
+            return;
+
+        var t = this.game.timings,
+            o = {
+                input: t.inputEnd - t.inputStart,
+                camera: t.cameraEnd - t.cameraStart,
+                phys: t.physicsEnd - t.physicsStart,
+                draw: t.renderEnd - t.renderStart
+            },
+            evt = this.eventQueue.shift();
+
+        if(evt)
+            o.event = evt;
+
+        this.graph.addData(o);
+    },
+    logEvent: function(name) {
+        this.eventQueue.push(name);
+    }
+});
+gf.debug.SpritesPanel = function(game) {
+    gf.debug.Panel.call(this, game);
+
+    this.name = 'sprites';
+    this.title = 'Sprites';
+
+    this.gfx = new PIXI.Graphics();
+
+    this.style = {
+        _default: {
+            size: 1,
+            color: 0xff2222,
+            alpha: 1
+        },
+        sensor: {
+            size: 1,
+            color: 0x22ff22,
+            alpha: 1
+        }
+    };
+};
+
+gf.inherits(gf.debug.SpritesPanel, gf.debug.Panel, {
+    createPanelElement: function() {
+        var div = gf.debug.Panel.prototype.createPanelElement.call(this),
+            pad = document.createElement('div'),
+            col = document.createElement('div');
+
+        // Show colliders
+        gf.debug.ui.addClass(col, 'checkbox');
+        gf.debug.ui.setHtml(col,
+            '<input type="checkbox" value="None" id="gf_debug_toggleCollisions" class="gf_debug_toggleCollisions" name="check" />' +
+            '<label for="gf_debug_toggleCollisions"></label>' +
+            '<span>Show sprite colliders</span>'
+        );
+        gf.debug.ui.bindDelegate(col, 'click', 'gf_debug_toggleCollisions', this.toggleCollisions.bind(this), 'input');
+        pad.appendChild(col);
+
+        div.appendChild(pad);
+
+        return div;
+    },
+    toggleCollisions: function() {
+        this.showing = !this.showing;
+
+        if(this.showing) {
+            this.game.world.addChild(this.gfx);
+            this._drawPhysics();
+        } else {
+            if(this.gfx.parent)
+                this.gfx.parent.removeChild(this.gfx);
+        }
+    },
+    tick: function() {
+        if(this.showing) {
+            this._drawPhysics();
+        }
+    },
+    _drawPhysics: function() {
+        var self = this,
+            g = this.gfx;
+
+        this.gfx.clear();
+        this.game.physics.space.eachShape(function(shape) {
+            if(!shape.body) return;
+
+            var body = shape.body,
+                p = body.p,
+                style = shape.sensor ? self.style.sensor : self.style._default;
+
+            g.lineStyle(style.size, style.color, style.alpha);
+
+            //circle
+            if(shape.type === 'circle') {
+                var cx = shape.bb_l + ((shape.bb_r - shape.bb_l) / 2),
+                    cy = shape.bb_t + ((shape.bb_b - shape.bb_t) / 2);
+
+                g.drawCircle(cx, cy, shape.r);
+            }
+            //polygon
+            else {
+                var sx = shape.verts[0],
+                    sy = shape.verts[1];
+
+                g.moveTo(p.x + sx, p.y + sy);
+
+                for(var i = 2; i < shape.verts.length; i+=2) {
+                    g.lineTo(
+                        p.x + shape.verts[i],
+                        p.y + shape.verts[i + 1]
+                    );
+                }
+
+                g.lineTo(p.x + sx, p.y + sy);
+            }
+        });
+    }
+});
+gf.debug.MapPanel = function (game) {
+    gf.debug.Panel.call(this, game);
+
+    this.name = 'map';
+    this.title = 'Mini-Map';
+};
+
+gf.inherits(gf.debug.MapPanel, gf.debug.Panel, {
+    createPanelElement: function() {
+        var div = gf.debug.Panel.prototype.createPanelElement.call(this);
+
+        this.minimap = new gf.debug.Minimap(div, this.game);
+
+        return div;
+    },
+    tick: function() {
+        this.minimap.render();
+    }
+});
+gf.debug.Graph = function(container, width, height, dataStyles) {
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = width;
+    this.canvas.height = height;
+    container.appendChild(this.canvas);
+
+    this.ctx = this.canvas.getContext('2d');
+
+    //setup data canvases, these are used to prerender the data graph
+    //and having two of them allows me to clear one with the other takes
+    //up the entire graph, so I have "wrap" the graph around to get more
+    this.dataCanvases = [
+        document.createElement('canvas'),
+        document.createElement('canvas')
+    ];
+    this.dataCtxs = [
+        this.dataCanvases[0].getContext('2d'),
+        this.dataCanvases[1].getContext('2d')
+    ];
+    this.dataScroll = [
+        0,
+        0
+    ];
+    this.dataIndex = 0;
+
+    this.label = 'ms';
+    this.labelPrecision = 0;
+    this.labelStyle = 'rgba(200, 200, 200, 0.6)';
+    this.max = 50;
+    this.dataLineWidth = 1;
+    this.padding = 5;
+
+    this.keySize = 115;
+
+    this.dataCanvases[0].width = this.dataCanvases[1].width = width - this.keySize;
+    this.dataCanvases[0].height = this.dataCanvases[1].height = height;
+
+    this.data = [];
+    this.styles = dataStyles || {};
+
+    if(!this.styles._default)
+        this.styles._default = 'red';
+
+    if(!this.styles.event)
+        this.styles.event = 'gray';
+};
+
+gf.inherits(gf.debug.Graph, Object, {
+    addData: function(values) {
+        this.data.push(values);
+
+        if(this.data.length > ((this.canvas.width - this.keySize) / this.dataLineWidth))
+            this.data.shift();
+
+        this.render();
+    },
+    render: function() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.updateData();
+
+        this.drawBg();
+        this.drawKey();
+        this.drawData();
+    },
+    drawBg: function() {
+        var ctx = this.ctx,
+            minX = this.keySize,
+            maxX = this.canvas.width,
+            maxY = this.canvas.height,
+            step = maxY / 3;
+
+        ctx.strokeStyle = ctx.fillStyle = this.labelStyle;
+
+        //draw top marker line
+        ctx.beginPath();
+        ctx.moveTo(minX, step);
+        ctx.lineTo(maxX, step);
+        ctx.stroke();
+
+        //draw the second marker line
+        ctx.beginPath();
+        ctx.moveTo(minX, step*2);
+        ctx.lineTo(maxX, step*2);
+        ctx.stroke();
+
+        //draw baseline marker
+        ctx.beginPath();
+        ctx.moveTo(minX, maxY);
+        ctx.lineTo(maxX, maxY);
+        ctx.stroke();
+
+        //draw marker line text
+        ctx.fillText(((this.max / 3)*2).toFixed(this.labelPrecision) + this.label, minX + this.padding, step-this.padding);
+        ctx.fillText((this.max / 3).toFixed(this.labelPrecision) + this.label, minX + this.padding, (step*2)-this.padding);
+    },
+    drawKey: function() {
+        var ctx = this.ctx,
+            i = 0,
+            box = 10,
+            data = this.data[this.data.length - 1],
+            pad = this.padding,
+            lbl = this.labelStyle;
+
+        for(var k in this.styles) {
+            var style = this.styles[k],
+                y = (box * i) + (pad * (i+1)),
+                val = typeof data[k] === 'number' ? data[k].toFixed(2) : null,
+                text = k + (val ? ' (' + val + ' ms)' : '');
+
+            ctx.fillStyle = style;
+            ctx.fillRect(pad, y, box, box);
+            ctx.fillStyle = lbl;
+            ctx.fillText(text, pad + box + pad, y + box);
+
+            i++;
+        }
+    },
+    drawData: function() {
+        var i = this.dataIndex,
+            ni = this.dataIndex ? 0 : 1,
+            c1 = this.dataCanvases[i],
+            s1 = this.dataScroll[i],
+            c2 = this.dataCanvases[ni],
+            s2 = this.dataScroll[ni],
+            w = c1.width,
+            h = c1.height;
+
+        //draw on prerender of data
+        this.ctx.drawImage(
+            c1,
+            0, //sx
+            0, //sy
+            s1, //sw
+            h, //sh
+            w - s1 + this.keySize, //dx
+            0, //dy
+            s1,
+            h
+        );
+        this.ctx.drawImage(
+            c2,
+            s2 - w, //sx
+            0, //sy
+            w - (s2 - w), //sw
+            h, //sh
+            this.keySize, //dx
+            0, //dy
+            w - (s2 - w), //dw
+            h //dh
+        );
+
+        if(w === s1) {
+            this.dataScroll[ni] = this.dataLineWidth;
+            this.dataCtxs[ni].clearRect(0, 0, w, h);
+            this.dataIndex = ni;
+        }
+    },
+    //draw the latest data point into the dataCanvas
+    updateData: function() {
+        var ctx = this.dataCtxs[this.dataIndex],
+            x = this.dataScroll[this.dataIndex],
+            maxY = this.dataCanvases[this.dataIndex].height,
+            lw = this.dataLineWidth,
+            vals = this.data[this.data.length - 1],
+            v = 0, step = 0, y = maxY;
+
+        for(var k in vals) {
+            ctx.beginPath();
+            ctx.strokeStyle = ctx.fillStyle = this.styles[k] || this.styles._default;
+            ctx.lineWidth = lw;
+
+            v = vals[k];
+            if(k === 'event') {
+                ctx.moveTo(x, maxY);
+                ctx.lineTo(x, 0);
+                ctx.fillText(v, x+this.padding, (this.padding*2));
+            } else {
+                step = ((v / this.max) * maxY);
+                step = step < 0 ? 0 : step;
+
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y-=step);
+            }
+
+            ctx.stroke();
+        }
+        this.dataScroll[0] += lw;
+        this.dataScroll[1] += lw;
+    }
+});
+gf.debug.Minimap = function(container, game) {
+    this.canvas = document.createElement('canvas');
+    this.prerenderCanvas = document.createElement('canvas');
+
+    container.appendChild(this.canvas);
+
+    this.ctx = this.canvas.getContext('2d');
+    this.pctx = this.prerenderCanvas.getContext('2d');
+
+    this.cachedpos = new gf.Point();
+    this.mapimage = null;
+    this.game = game;
+    this.scale = 0.25;
+
+    this.viewportRectColor = 'rgba(255, 0, 255, 1)';
+};
+
+gf.inherits(gf.debug.Minimap, Object, {
+    render: function() {
+        if(!this.game.world)
+            return;
+
+        var world = this.game.world;
+
+        //if the world changes, prerender an image for it
+        if(!this.cachedworld || this.cachedworld !== world) {
+            this.cachedworld = world;
+
+            this.canvas.width = this.prerenderCanvas.width = (world.size.x * world.tileSize.x * this.scale);
+            this.canvas.height = this.prerenderCanvas.height = (world.size.y * world.tileSize.y * this.scale);
+
+            this.prerender();
+        }
+
+        //only render when moving
+        if(this.cachedpos && this.cachedpos.x === world.position.x && this.cachedpos === world.position.y)
+            return;
+
+        //update cached position
+        this.cachedpos.x = world.position.x;
+        this.cachedpos.y = world.position.y;
+
+        //redraw
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.drawMap();
+        //this.drawObjects();
+        //this.drawViewport();
+    },
+    drawMap: function() {
+        //draw the prerendered map image
+        this.ctx.drawImage(this.prerenderCanvas, 0, 0);
+
+        //draw the viewport
+        var w = this.game.world,
+            p = w.position,
+            c = this.game.camera,
+            s = this.scale;
+
+        this.ctx.strokeStyle = this.viewportRectColor;
+        this.ctx.strokeRect(
+            (-p.x * s) / w.scale.x,
+            (-p.y * s) / w.scale.x,
+            (c.size.x * s) / w.scale.x,
+            (c.size.y * s) / w.scale.y
+        );
+    },
+    prerender: function() {
+        var world = this.game.world,
+            size = world.size,
+            tsx = world.tileSize.x * this.scale,
+            tsy = world.tileSize.y * this.scale;
+
+        for(var l = 0, ll = world.children.length; l < ll; ++l) {
+            var layer = world.children[l];
+
+            //if it is a TiledLayer
+            if(layer.tileIds && layer.visible) {
+                for(var x = 0, xl = size.x; x < xl; ++x) {
+                    for(var y = 0, yl = size.y; y < yl; ++y) {
+                        var id = (x + (y * size.x)),
+                            tid = layer.tileIds[id],
+                            set = world.getTileset(tid),
+                            tx;
+
+                        if(set) {
+                            tx = set.getTileTexture(tid);
+                            this.prerenderTile(tx, x * tsx, y * tsy);
+                        }
+                    }
+                }
+            }
+        }
+    },
+    prerenderTile: function(tile, x, y) {
+        var frame = tile.frame;
+
+        //from pixi canvas renderer
+        this.pctx.drawImage(
+            tile.baseTexture.source,
+            frame.x,
+            frame.y,
+            frame.width,
+            frame.height,
+            x,
+            y,
+            frame.width * this.scale,
+            frame.height * this.scale
+        );
+    }
+});
+//based on: http://www.html5rocks.com/en/tutorials/doodles/gamepad/
+var STICK_OFFSET = 10,
+btnIds = [
+    'button-1',
+    'button-2',
+    'button-3',
+    'button-4',
+    'button-left-shoulder-top',
+    'button-right-shoulder-top',
+    'button-left-shoulder-bottom',
+    'button-right-shoulder-bottom',
+    'button-select',
+    'button-start',
+    'stick-1',
+    'stick-2',
+    'button-dpad-top',
+    'button-dpad-bottom',
+    'button-dpad-left',
+    'button-dpad-right'
+],
+axisIds = [
+    ['stick-1-axis-x', 'stick-1'],
+    ['stick-1-axis-y', 'stick-1'],
+    ['stick-2-axis-x', 'stick-2'],
+    ['stick-2-axis-y', 'stick-2']
+],
+template =
+'<div class="gf_debug_gp_buttons">' +
+    '<div class="gf_debug_gp_face" name="button-1"></div>' +
+    '<div class="gf_debug_gp_face" name="button-2"></div>' +
+    '<div class="gf_debug_gp_face" name="button-3"></div>' +
+    '<div class="gf_debug_gp_face" name="button-4"></div>' +
+    '<div class="gf_debug_gp_top-shoulder" name="button-left-shoulder-top"></div>' +
+    '<div class="gf_debug_gp_top-shoulder" name="button-right-shoulder-top"></div>' +
+    '<div class="gf_debug_gp_bottom-shoulder" name="button-left-shoulder-bottom"></div>' +
+    '<div class="gf_debug_gp_bottom-shoulder" name="button-right-shoulder-bottom"></div>' +
+    '<div class="gf_debug_gp_select-start" name="button-select"></div>' +
+    '<div class="gf_debug_gp_select-start" name="button-start"></div>' +
+    '<div class="gf_debug_gp_stick" name="stick-1"></div>' +
+    '<div class="gf_debug_gp_stick" name="stick-2"></div>' +
+    '<div class="gf_debug_gp_face" name="button-dpad-top"></div>' +
+    '<div class="gf_debug_gp_face" name="button-dpad-bottom"></div>' +
+    '<div class="gf_debug_gp_face" name="button-dpad-left"></div>' +
+    '<div class="gf_debug_gp_face" name="button-dpad-right"></div>' +
+'</div>' +
+'<div class="gf_debug_gp_labels">' +
+    '<label for="button-1">?</label>' +
+    '<label for="button-2">?</label>' +
+    '<label for="button-3">?</label>' +
+    '<label for="button-4">?</label>' +
+    '<label for="button-left-shoulder-top">?</label>' +
+    '<label for="button-right-shoulder-top">?</label>' +
+    '<label for="button-left-shoulder-bottom">?</label>' +
+    '<label for="button-right-shoulder-bottom">?</label>' +
+    '<label for="button-select">?</label>' +
+    '<label for="button-start">?</label>' +
+    '<label for="stick-1">?</label>' +
+    '<label for="stick-2">?</label>' +
+    '<label for="button-dpad-top">?</label>' +
+    '<label for="button-dpad-bottom">?</label>' +
+    '<label for="button-dpad-left">?</label>' +
+    '<label for="button-dpad-right">?</label>' +
+    '<label for="stick-1-axis-x">?</label>' +
+    '<label for="stick-1-axis-y">?</label>' +
+    '<label for="stick-2-axis-x">?</label>' +
+    '<label for="stick-2-axis-y">?</label>' +
+'</div>' +
+'<div class="gf_debug_gp_name">Grapefruit</div>';
+
+gf.debug.Gamepad = function() {
+    var el = this.element = document.createElement('div');
+    el.classList.add('gf_debug_gp');
+    el.innerHTML = template;
+};
+
+gf.inherits(gf.debug.Gamepad, Object, {
+    updateButton: function(status) {
+        var buttonEl = this.element.querySelector('[name="' + btnIds[status.code] + '"]'),
+            labelEl = this.element.querySelector('label[for="' + btnIds[status.code] + '"]');
+
+        labelEl.innerHTML = status.value.toFixed(2);
+
+        if(status.down) {
+            buttonEl.classList.add('pressed');
+            labelEl.classList.add('visible');
+        } else {
+            buttonEl.classList.remove('pressed');
+            labelEl.classList.remove('visible');
+        }
+    },
+    updateAxis: function(status) {
+        var stickEl = this.element.querySelector('[name="' + axisIds[status.code][1] + '"]'),
+            labelEl = this.element.querySelector('label[for="' + axisIds[status.code][0] + '"]'),
+            offsetVal = status.value * STICK_OFFSET;
+
+        if(status.code === gf.input.GP_AXIS.LEFT_ANALOGUE_HOR || status.code === gf.input.GP_AXIS.RIGHT_ANALOGUE_HOR) {
+            stickEl.style.marginLeft = offsetVal + 'px';
+        } else {
+            stickEl.style.marginTop = offsetVal + 'px';
+        }
+
+        labelEl.innerHTML = status.value.toFixed(2);
+        if(status.value !== 0) {
+            labelEl.classList.add('visible');
+            if (status.value > 0) {
+                labelEl.classList.add('positive');
+            } else {
+                labelEl.classList.add('negative');
+            }
+        } else {
+            labelEl.classList.remove('visible');
+            labelEl.classList.remove('positive');
+            labelEl.classList.remove('negative');
+        }
+    }
+});
+
+//Some general dom helpers
+gf.debug.ui = {
+    bindDelegate: function(dom, evt, cls, fn, name) {
+        name = name ? name.toUpperCase() : 'DIV';
+
+        dom.addEventListener(evt, function(e) {
+            if(e.target && e.target.nodeName.toUpperCase() === name) {
+                var classes = e.target.className.split(' ');
+
+                if(classes && classes.indexOf(cls) !== -1) {
+                    if(fn) fn(e);
+                }
+            }
+        });
+    },
+
+    removeClass: function(dom, cls) {
+        var classes = dom.className.split(' '),
+            i = classes.indexOf(cls);
+
+        if(i !== -1) {
+            classes.splice(i, 1);
+            dom.className = classes.join(' ').trim();
+        }
+    },
+
+    addClass: function(dom, cls) {
+        var classes = dom.className.split(' ');
+
+        classes.push(cls);
+        dom.className = classes.join(' ').trim();
+    },
+
+    setText: function(dom, txt) {
+        dom.textContent = txt;
+    },
+
+    setHtml: function(dom, html) {
+        dom.innerHTML = html;
+    },
+
+    setStyle: function(dom, style, value) {
+        if(typeof style === 'string') {
+            dom.style[style] = value;
+        } else {
+            for(var key in style) {
+                dom.style[key] = style[key];
+            }
         }
     }
 };
-var d = {
-    _init: false,
-    show: function(cont, o) {
-        if(!o.game)
-            throw 'Need to know what game to debug!';
-
-        d.game = o.game;
-        d.game.on('beforetick', d._beforeTick);
-        d.game.on('aftertick', d._afterTick);
-
-        if(o.fps !== false)
-            d.showFps(cont, o.fps);
-
-        if(o.gamepad !== false)
-            d.showGamepad(cont, o.game);
-
-        if(o.player)
-            d.showPlayer(cont, o.player);
-    },
-    //show the FPS Counter
-    showFps: function(cont, o) {
-        if(d.meter) return d.meter;
-
-        if(typeof cont === 'object' && cont.nodeType === undefined) {
-            o = cont;
-            cont = document.body;
-        }
-        cont = d._ensureContainer(cont);
-
-        o = o || {};
-        //add some of our defaults
-        o.smoothing = o.smoothing || 1;
-        o.heat = o.heat !== undefined ? o.heat : true;
-        o.graph = o.graph !== undefined ? o.graph : true;
-        o.history = o.history !== undefined ? o.history : 25;
-
-        d.meter = new FPSMeter(cont, o);
-    },
-    //show the Entity Tracker
-    showEntity: function(cont, ent) {
-        if(d.entity) return d.entity;
-
-        if(typeof cont === 'object' && cont.nodeType === undefined) {
-            ent = cont;
-            cont = document.body;
-        }
-        cont = d._ensureContainer(cont);
-
-        if(ent) {
-            d.entity = new EntityTracker(cont, ent);
-        }
-    },
-    //show the Gamepad Tracker
-    showGamepad: function(cont, game) {
-        if(d.gamepad) return d.gamepad;
-
-        if(typeof cont === 'object' && cont.nodeType === undefined) {
-            game = cont;
-            cont = document.body;
-        }
-        cont = d._ensureContainer(cont);
-
-        if(game) {
-            d.gamepad = new GamepadTracker(cont, game);
-        }
-    },
-
-    _beforeTick: function() {
-        if(d.meter)
-            d.meter.tickStart();
-    },
-    _afterTick: function() {
-        if(d.meter)
-            d.meter.tick();
-
-        if(d.entity)
-            d.entity.tick();
-
-        if(d.gamepad)
-            d.gamepad.tick();
-    },
-
-    _ensureContainer: function(cont) {
-        if(typeof cont === 'string')
-            cont = document.getElementById(cont);
-
-        if(!cont)
-            cont = document.body;
-
-        return cont;
-    },
-    setStyle: function(dom, style) {
-        for(var key in style) {
-            dom.style[key] = style[key];
-        }
-    }
-};
-
-//the version of this plugin. Placed in by grunt when built
-//you can change this value in the package.json (under version)
-d.version = '0.0.1';
-
-//the version of gf that is required for this plugin
-//to function correctly. Placed in by grunt when built
-//you can change this value in the package.json (under engines.gf)
-d.gfVersion = '0.0.x';
-
-//register the plugin to grapefruit
-gf.plugin.register(d, 'debug');
-
 
 })(window);
