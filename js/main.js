@@ -15,7 +15,6 @@ require([
                 gf.debug.show(window.GAME = game);
 
                 var $sw = $('#switch'),
-                    $dirty = $('#dirty'),
                     $fullscreen = $('#fullscreen');
 
                 //create a game state for each of the worlds
@@ -48,10 +47,6 @@ require([
                 $sw.on('change', function() {
                     var world = $sw.find(':selected').val();
                     game.enableState(world);
-                });
-
-                $dirty.on('click', function() {
-                    game.stage.dirty = true;
                 });
 
                 $fullscreen.on('click', function() {
