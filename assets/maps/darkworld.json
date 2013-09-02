@@ -8,6 +8,10 @@
          "type":"tilelayer",
          "visible":true,
          "width":256,
+         "properties":
+            {
+             "preRender":"true"
+            },
          "x":0,
          "y":0
         }],
