@@ -4,7 +4,7 @@
  * Copyright (c) 2012, Chad Engler
  * https://github.com/englercj/grapefruit
  *
- * Compiled: 2013-08-02
+ * Compiled: 2013-09-01
  *
  * GrapeFruit Game Engine is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -44,7 +44,7 @@ Object.freeze;Object.freeze=function(a){return typeof a=="function"?a:s(a)}}Obje
  * Copyright (c) 2012, Mat Groves
  * http://goodboydigital.com/
  *
- * Compiled: 2013-07-27
+ * Compiled: 2013-08-18
  *
  * Pixi.JS is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -820,15 +820,6 @@ PIXI.DisplayObject = function()
 	this.renderable = false;
 
 	/**
-	 * [read-only] The visibility of the object based on world (parent) factors.
-	 *
-	 * @property worldVisible
-	 * @type Boolean
-	 * @readOnly
-	 */	
-	this.worldVisible = false;
-
-	/**
 	 * [read-only] The display object container that contains this display object.
 	 *
 	 * @property parent
@@ -845,15 +836,6 @@ PIXI.DisplayObject = function()
 	 * @readOnly
 	 */	
 	this.stage = null;
-
-	/**
-	 * [read-only] The index of this object in the parent's `children` array
-	 *
-	 * @property childIndex
-	 * @type Number
-	 * @readOnly
-	 */	
-	this.childIndex = 0;
 
 	/**
 	 * [read-only] The multiplied alpha of the displayobject
@@ -993,17 +975,6 @@ PIXI.DisplayObject = function()
 // constructor
 PIXI.DisplayObject.prototype.constructor = PIXI.DisplayObject;
 
-//TODO make visible a getter setter
-/*
-Object.defineProperty(PIXI.DisplayObject.prototype, 'visible', {
-    get: function() {
-        return this._visible;
-    },
-    set: function(value) {
-        this._visible = value;
-    }
-});*/
-
 /**
  * [Deprecated] Indicates if the sprite will have touch and mouse interactivity. It is false by default
  * Instead of using this function you can now simply set the interactive property to true or false
@@ -1076,11 +1047,9 @@ PIXI.DisplayObject.prototype.addFilter = function(mask)
 	if(this.filter)return;
 	this.filter = true;
 	
-	
 	// insert a filter block..
 	var start = new PIXI.FilterBlock();
 	var end = new PIXI.FilterBlock();
-	
 	
 	start.mask = mask;
 	end.mask = mask;
@@ -1091,9 +1060,7 @@ PIXI.DisplayObject.prototype.addFilter = function(mask)
 	start.open = true;
 	
 	/*
-	 * 
 	 * insert start
-	 * 
 	 */
 	
 	var childFirst = start
@@ -1124,9 +1091,7 @@ PIXI.DisplayObject.prototype.addFilter = function(mask)
 	// now insert the end filter block..
 	
 	/*
-	 * 
 	 * insert end filter
-	 * 
 	 */
 	var childFirst = end
 	var childLast = end
@@ -1202,8 +1167,6 @@ PIXI.DisplayObject.prototype.removeFilter = function()
 	previousObject._iNext = nextObject;		
 	
 	// this is always true too!
-//	if(this.last == lastBlock)
-	//{
 	var tempLast =  lastBlock._iPrev;	
 	// need to make sure the parents last is updated too
 	var updateLast = this;
@@ -1222,7 +1185,6 @@ PIXI.DisplayObject.prototype.removeFilter = function()
 	{
 		this.__renderGroup.removeFilterBlocks(startBlock, lastBlock);
 	}
-	//}
 }
 
 /*
@@ -1234,7 +1196,7 @@ PIXI.DisplayObject.prototype.removeFilter = function()
 PIXI.DisplayObject.prototype.updateTransform = function()
 {
 	// TODO OPTIMIZE THIS!! with dirty
-	if(this.rotation != this.rotationCache)
+	if(this.rotation !== this.rotationCache)
 	{
 		this.rotationCache = this.rotation;
 		this._sr =  Math.sin(this.rotation);
@@ -1276,9 +1238,12 @@ PIXI.DisplayObject.prototype.updateTransform = function()
 	// because we are using affine transformation, we can optimise the matrix concatenation process.. wooo!
 	// mat3.multiply(this.localTransform, this.parent.worldTransform, this.worldTransform);
 	this.worldAlpha = this.alpha * this.parent.worldAlpha;
+	
+	this.vcount = PIXI.visibleCount;
 
 }
 
+PIXI.visibleCount = 0;
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  */
@@ -1339,11 +1304,10 @@ PIXI.DisplayObjectContainer.prototype.addChild = function(child)
 	}
 
 	child.parent = this;
-	child.childIndex = this.children.length;
 	
 	this.children.push(child);	
 	
-	// updae the stage refference..
+	// update the stage refference..
 	
 	if(this.stage)
 	{
@@ -1378,7 +1342,6 @@ PIXI.DisplayObjectContainer.prototype.addChild = function(child)
 	nextObject = previousObject._iNext;
 	
 	// always true in this case
-	//this.last = child.last;
 	// need to make sure the parents last is updated too
 	var updateLast = this;
 	var prevLast = previousObject;
@@ -1442,7 +1405,7 @@ PIXI.DisplayObjectContainer.prototype.addChildAt = function(child, index)
 		}
 		
 		// modify the list..
-		var childFirst = child.first
+		var childFirst = child.first;
 		var childLast = child.last;
 		var nextObject;
 		var previousObject;
@@ -1450,7 +1413,7 @@ PIXI.DisplayObjectContainer.prototype.addChildAt = function(child, index)
 		if(index == this.children.length)
 		{
 			previousObject =  this.last;
-			var updateLast = this;//.parent;
+			var updateLast = this;
 			var prevLast = this.last;
 			while(updateLast)
 			{
@@ -1579,7 +1542,7 @@ PIXI.DisplayObjectContainer.prototype.removeChild = function(child)
 	{
 		// unlink //
 		// modify the list..
-		var childFirst = child.first
+		var childFirst = child.first;
 		var childLast = child.last;
 		
 		var nextObject = childLast._iNext;
@@ -1779,9 +1742,18 @@ PIXI.Sprite.prototype.setTexture = function(texture)
 	if(this.texture.baseTexture != texture.baseTexture)
 	{
 		this.textureChange = true;	
+		
+		if(this.__renderGroup)
+		{
+			this.texture = texture;
+			this.__renderGroup.updateTexture(this);
+		}
+	}
+	else
+	{
+		this.texture = texture;
 	}
 	
-	this.texture = texture;
 	this.updateFrame = true;
 }
 
@@ -1972,7 +1944,9 @@ PIXI.MovieClip.prototype.updateTransform = function()
 	if(!this.playing)return;
 	
 	this.currentFrame += this.animationSpeed;
+	
 	var round = (this.currentFrame + 0.5) | 0;
+	
 	if(this.loop || round < this.textures.length)
 	{
 		this.setTexture(this.textures[round % this.textures.length]);
@@ -2491,6 +2465,8 @@ PIXI.InteractionManager = function(stage)
 	 */
 	this.touchs = {};
 
+
+	
 	// helpers
 	this.tempPoint = new PIXI.Point();
 	//this.tempMatrix =  mat3.create();
@@ -2501,7 +2477,8 @@ PIXI.InteractionManager = function(stage)
 	this.pool = [];
 
 	this.interactiveItems = [];
-
+	
+	
 	this.last = 0;
 }
 
@@ -2526,7 +2503,7 @@ PIXI.InteractionManager.prototype.collectInteractiveSprite = function(displayObj
 	{
 		var child = children[i];
 		
-		if(child.visible) {
+//		if(child.visible) {
 			// push all interactive bits
 			if(child.interactive)
 			{
@@ -2548,7 +2525,7 @@ PIXI.InteractionManager.prototype.collectInteractiveSprite = function(displayObj
 					this.collectInteractiveSprite(child, iParent);
 				}
 			}
-		}
+//		}
 	}
 }
 
@@ -2574,7 +2551,7 @@ PIXI.InteractionManager.prototype.setTarget = function(target)
 	target.view.addEventListener('mousemove',  this.onMouseMove.bind(this), true);
 	target.view.addEventListener('mousedown',  this.onMouseDown.bind(this), true);
  	document.body.addEventListener('mouseup',  this.onMouseUp.bind(this), true);
- 	target.view.addEventListener('mouseout',   this.onMouseUp.bind(this), true);
+ 	target.view.addEventListener('mouseout',   this.onMouseOut.bind(this), true);
 	
 	// aint no multi touch just yet!
 	target.view.addEventListener("touchstart", this.onTouchStart.bind(this), true);
@@ -2628,7 +2605,9 @@ PIXI.InteractionManager.prototype.update = function()
 	for (var i = 0; i < length; i++)
 	{
 		var item = this.interactiveItems[i];
-		if(!item.visible)continue;
+		
+		
+		//if(!item.visible)continue;
 		
 		// OPTIMISATION - only calculate every time if the mousemove function exists..
 		// OK so.. does the object have any other interactive functions?
@@ -2709,7 +2688,6 @@ PIXI.InteractionManager.prototype.onMouseMove = function(event)
  */
 PIXI.InteractionManager.prototype.onMouseDown = function(event)
 {
-	event.preventDefault();
 	this.mouse.originalEvent = event || window.event; //IE uses window.event
 	
 	// loop through inteaction tree...
@@ -2742,6 +2720,26 @@ PIXI.InteractionManager.prototype.onMouseDown = function(event)
 				// just the one!
 				if(!item.interactiveChildren)break;
 			}
+		}
+	}
+}
+
+
+PIXI.InteractionManager.prototype.onMouseOut = function(event)
+{
+	var length = this.interactiveItems.length;
+	
+	this.target.view.style.cursor = "default";	
+				
+	for (var i = 0; i < length; i++)
+	{
+		var item = this.interactiveItems[i];
+		
+		if(item.__isOver)
+		{
+			this.mouse.target = item;
+			if(item.mouseout)item.mouseout(this.mouse);
+			item.__isOver = false;	
 		}
 	}
 }
@@ -2810,7 +2808,7 @@ PIXI.InteractionManager.prototype.hitTest = function(item, interactionData)
 {
 	var global = interactionData.global;
 	
-	if(!item.visible)return false;
+	if(item.vcount !== PIXI.visibleCount)return false;
 
 	var isSprite = (item instanceof PIXI.Sprite),
 		worldTransform = item.worldTransform,
@@ -2880,7 +2878,6 @@ PIXI.InteractionManager.prototype.hitTest = function(item, interactionData)
  */
 PIXI.InteractionManager.prototype.onTouchMove = function(event)
 {
-	this.mouse.originalEvent = event || window.event; //IE uses window.event
 	var rect = this.target.view.getBoundingClientRect();
 	var changedTouches = event.changedTouches;
 	
@@ -2888,6 +2885,7 @@ PIXI.InteractionManager.prototype.onTouchMove = function(event)
 	{
 		var touchEvent = changedTouches[i];
 		var touchData = this.touchs[touchEvent.identifier];
+		touchData.originalEvent =  event || window.event;
 		
 		// update the touch position
 		touchData.global.x = (touchEvent.clientX - rect.left) * (this.target.width / rect.width);
@@ -2911,9 +2909,6 @@ PIXI.InteractionManager.prototype.onTouchMove = function(event)
  */
 PIXI.InteractionManager.prototype.onTouchStart = function(event)
 {
-	event.preventDefault();
-	this.mouse.originalEvent = event || window.event; //IE uses window.event
-	
 	var rect = this.target.view.getBoundingClientRect();
 	
 	var changedTouches = event.changedTouches;
@@ -2923,6 +2918,8 @@ PIXI.InteractionManager.prototype.onTouchStart = function(event)
 		
 		var touchData = this.pool.pop();
 		if(!touchData)touchData = new PIXI.InteractionData();
+		
+		touchData.originalEvent =  event || window.event;
 		
 		this.touchs[touchEvent.identifier] = touchData;
 		touchData.global.x = (touchEvent.clientX - rect.left) * (this.target.width / rect.width);
@@ -2961,7 +2958,7 @@ PIXI.InteractionManager.prototype.onTouchStart = function(event)
  */
 PIXI.InteractionManager.prototype.onTouchEnd = function(event)
 {
-	this.mouse.originalEvent = event || window.event; //IE uses window.event
+	//this.mouse.originalEvent = event || window.event; //IE uses window.event
 	var rect = this.target.view.getBoundingClientRect();
 	var changedTouches = event.changedTouches;
 	
@@ -2983,7 +2980,7 @@ PIXI.InteractionManager.prototype.onTouchEnd = function(event)
 			if(itemTouchData == touchData)
 			{
 				// so this one WAS down...
-				
+				touchData.originalEvent =  event || window.event;
 				// hitTest??
 				
 				if(item.touchend || item.tap)
@@ -3204,38 +3201,6 @@ PIXI.Stage.prototype.getMousePosition = function()
 {
 	return this.interactionManager.mouse.global;
 }
-/*
-PIXI.Stage.prototype.__addChild = function(child)
-{
-	if(child.interactive)this.dirty = true;
-	
-	child.stage = this;
-	
-	if(child.children)
-	{
-		for (var i=0; i < child.children.length; i++) 
-		{
-		  	this.__addChild(child.children[i]);
-		};
-	}
-	
-}
-
-
-PIXI.Stage.prototype.__removeChild = function(child)
-{
-	if(child.interactive)this.dirty = true;
-	
-	child.stage = undefined;
-	
-	if(child.children)
-	{
-		for(var i=0,j=child.children.length; i<j; i++)
-		{
-		  	this.__removeChild(child.children[i]);
-		}
-	}
-}*/
 
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
 // http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
@@ -3363,9 +3328,8 @@ PIXI.runList = function(item)
 	while(tmp._iNext)
 	{
 		safe++;
-//		console.log(tmp.childIndex + tmp);
 		tmp = tmp._iNext;
-		console.log(tmp);//.childIndex);
+		console.log(tmp);
 	//	console.log(tmp);
 	
 		if(safe > 100)
@@ -3457,8 +3421,11 @@ PIXI.EventTarget = function () {
  * @param height {Number} the height of the renderers view
  * @param view {Canvas} the canvas to use as a view, optional
  * @param transparent=false {Boolean} the transparency of the render view, default false
+ * @param antialias=false {Boolean} sets antialias (only applicable in webGL chrome at the moment)
+ * 
+ * antialias
  */
-PIXI.autoDetectRenderer = function(width, height, view, transparent)
+PIXI.autoDetectRenderer = function(width, height, view, transparent, antialias)
 {
 	if(!width)width = 800;
 	if(!height)height = 600;
@@ -3469,7 +3436,7 @@ PIXI.autoDetectRenderer = function(width, height, view, transparent)
 	//console.log(webgl);
 	if( webgl )
 	{
-		return new PIXI.WebGLRenderer(width, height, view, transparent);
+		return new PIXI.WebGLRenderer(width, height, view, transparent, antialias);
 	}
 
 	return	new PIXI.CanvasRenderer(width, height, view, transparent);
@@ -4283,7 +4250,7 @@ PIXI.WebGLGraphics.buildLine = function(graphicsData, webGLData)
 			verts.push(px , py);
 			verts.push(r, g, b, alpha);
 			
-			verts.push(p2x - (px-p2x), p2y - (py - p2y));//, 4);
+			verts.push(p2x - (px-p2x), p2y - (py - p2y));
 			verts.push(r, g, b, alpha);
 		}
 	}
@@ -4396,9 +4363,10 @@ PIXI.gl;
  * @param height=0 {Number} the height of the canvas view
  * @param view {Canvas} the canvas to use as a view, optional
  * @param transparent=false {Boolean} the transparency of the render view, default false
+ * @param antialias=false {Boolean} sets antialias (only applicable in chrome at the moment)
  * 
  */
-PIXI.WebGLRenderer = function(width, height, view, transparent)
+PIXI.WebGLRenderer = function(width, height, view, transparent, antialias)
 {
 	// do a catch.. only 1 webGL renderer..
 
@@ -4422,7 +4390,7 @@ PIXI.WebGLRenderer = function(width, height, view, transparent)
  	{
         PIXI.gl = this.gl = this.view.getContext("experimental-webgl",  {  	
     		 alpha: this.transparent,
-    		 antialias:true, // SPEED UP??
+    		 antialias:!!antialias, // SPEED UP??
     		 premultipliedAlpha:false,
     		 stencil:true
         });
@@ -4509,8 +4477,6 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
 	{
 		// TODO make this work
 		// dont think this is needed any more?
-		//if(this.__stage)this.checkVisibility(this.__stage, false)
-		
 		this.__stage = stage;
 		this.stageRenderGroup.setRenderable(stage);
 	}
@@ -4527,10 +4493,8 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
 	// update any textures	
 	PIXI.WebGLRenderer.updateTextures();
 		
-	// recursivly loop through all items!
-	//this.checkVisibility(stage, true);
-	
 	// update the scene graph	
+	PIXI.visibleCount++;
 	stage.updateTransform();
 	
 	var gl = this.gl;
@@ -4539,16 +4503,12 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
 	gl.colorMask(true, true, true, this.transparent); 
 	gl.viewport(0, 0, this.width, this.height);	
 	
-	// set the correct matrix..	
-   //	gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, this.projectionMatrix);
-   
    	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		
 	gl.clearColor(stage.backgroundColorSplit[0],stage.backgroundColorSplit[1],stage.backgroundColorSplit[2], !this.transparent);     
 	gl.clear(gl.COLOR_BUFFER_BIT);
 
 	// HACK TO TEST
-	//PIXI.projectionMatrix = this.projectionMatrix;
 	
 	this.stageRenderGroup.backgroundColor = stage.backgroundColorSplit;
 	this.stageRenderGroup.render(PIXI.projection);
@@ -4586,8 +4546,9 @@ PIXI.WebGLRenderer.prototype.render = function(stage)
  */
 PIXI.WebGLRenderer.updateTextures = function()
 {
-	for (var i=0; i < PIXI.texturesToUpdate.length; i++) this.updateTexture(PIXI.texturesToUpdate[i]);
-	for (var i=0; i < PIXI.texturesToDestroy.length; i++) this.destroyTexture(PIXI.texturesToDestroy[i]);
+	//TODO break this out into a texture manager...
+	for (var i=0; i < PIXI.texturesToUpdate.length; i++) PIXI.WebGLRenderer.updateTexture(PIXI.texturesToUpdate[i]);
+	for (var i=0; i < PIXI.texturesToDestroy.length; i++) PIXI.WebGLRenderer.destroyTexture(PIXI.texturesToDestroy[i]);
 	PIXI.texturesToUpdate = [];
 	PIXI.texturesToDestroy = [];
 }
@@ -4602,6 +4563,7 @@ PIXI.WebGLRenderer.updateTextures = function()
  */
 PIXI.WebGLRenderer.updateTexture = function(texture)
 {
+	//TODO break this out into a texture manager...
 	var gl = PIXI.gl;
 	
 	if(!texture._glTexture)
@@ -4642,9 +4604,10 @@ PIXI.WebGLRenderer.updateTexture = function(texture)
  * @param texture {Texture} The texture to update
  * @private
  */
-PIXI.WebGLRenderer.prototype.destroyTexture = function(texture)
+PIXI.WebGLRenderer.destroyTexture = function(texture)
 {
-	var gl = this.gl;
+	//TODO break this out into a texture manager...
+	var gl = PIXI.gl;
 
 	if(texture._glTexture)
 	{
@@ -4808,7 +4771,6 @@ PIXI.WebGLBatch.prototype.clean = function()
 	this.uvs = [];
 	this.indices = [];
 	this.colors = [];
-	//this.sprites = [];
 	this.dynamicSize = 1;
 	this.texture = null;
 	this.last = null;
@@ -4845,7 +4807,6 @@ PIXI.WebGLBatch.prototype.init = function(sprite)
 	this.dirty = true;
 	this.blendMode = sprite.blendMode;
 	this.texture = sprite.texture.baseTexture;
-//	this.sprites.push(sprite);
 	this.head = sprite;
 	this.tail = sprite;
 	this.size = 1;
@@ -4878,7 +4839,6 @@ PIXI.WebGLBatch.prototype.insertBefore = function(sprite, nextSprite)
 	else
 	{
 		this.head = sprite;
-		//this.head.__prev = null
 	}
 }
 
@@ -4966,7 +4926,7 @@ PIXI.WebGLBatch.prototype.split = function(sprite)
 {
 	this.dirty = true;
 
-	var batch = new PIXI.WebGLBatch(this.gl);//PIXI._getBatch(this.gl);
+	var batch = new PIXI.WebGLBatch(this.gl);
 	batch.init(sprite);
 	batch.texture = this.texture;
 	batch.tail = this.tail;
@@ -4976,8 +4936,6 @@ PIXI.WebGLBatch.prototype.split = function(sprite)
 
 	sprite.__prev = null;
 	// return a splite batch!
-	//sprite.__prev.__next = null;
-	//sprite.__prev = null;
 
 	// TODO this size is wrong!
 	// need to recalculate :/ problem with a linked list!
@@ -5047,13 +5005,13 @@ PIXI.WebGLBatch.prototype.growBatch = function()
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER,this.verticies , gl.DYNAMIC_DRAW);
 
-	this.uvs  = new Float32Array( this.dynamicSize * 8 )  
+	this.uvs  = new Float32Array( this.dynamicSize * 8 );
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.uvBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, this.uvs , gl.DYNAMIC_DRAW);
 
 	this.dirtyUVS = true;
 
-	this.colors  = new Float32Array( this.dynamicSize * 4 )  
+	this.colors  = new Float32Array( this.dynamicSize * 4 );
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, this.colors , gl.DYNAMIC_DRAW);
 
@@ -5152,7 +5110,7 @@ PIXI.WebGLBatch.prototype.update = function()
 
 	while(displayObject)
 	{
-		if(displayObject.worldVisible)
+		if(displayObject.vcount === PIXI.visibleCount)
 		{
 			width = displayObject.texture.frame.width;
 			height = displayObject.texture.frame.height;
@@ -5254,7 +5212,7 @@ PIXI.WebGLBatch.prototype.update = function()
 PIXI.WebGLBatch.prototype.render = function(start, end)
 {
 	start = start || 0;
-	//end = end || this.size;
+
 	if(end == undefined)end = this.size;
 	
 	if(this.dirty)
@@ -5306,9 +5264,8 @@ PIXI.WebGLBatch.prototype.render = function(start, end)
 	// dont need to upload!
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 
-	//var startIndex = 0//1;
 	var len = end - start;
-	// console.log(this.size)
+
     // DRAW THAT this!
     gl.drawElements(gl.TRIANGLES, len * 6, gl.UNSIGNED_SHORT, start * 2 * 6 );
 }
@@ -5381,31 +5338,33 @@ PIXI.WebGLRenderGroup.prototype.render = function(projection)
 	gl.uniform2f(PIXI.shaderProgram.projectionVector, projection.x, projection.y);
 	gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 	
-	// TODO remove this by replacing visible with getter setters..	
-	this.checkVisibility(this.root, this.root.visible);
-	
 	// will render all the elements in the group
 	var renderable;
 	
-	
 	for (var i=0; i < this.batchs.length; i++) 
 	{
+		
 		renderable = this.batchs[i];
 		if(renderable instanceof PIXI.WebGLBatch)
 		{
 			this.batchs[i].render();
+			continue;
 		}
-		else if(renderable instanceof PIXI.TilingSprite)
+		
+		// non sprite batch..
+		var worldVisible = renderable.vcount === PIXI.visibleCount;
+
+		if(renderable instanceof PIXI.TilingSprite)
 		{
-			if(renderable.visible)this.renderTilingSprite(renderable, projection);
+			if(worldVisible)this.renderTilingSprite(renderable, projection);
 		}
 		else if(renderable instanceof PIXI.Strip)
 		{
-			if(renderable.visible)this.renderStrip(renderable, projection);
+			if(worldVisible)this.renderStrip(renderable, projection);
 		}
 		else if(renderable instanceof PIXI.Graphics)
 		{
-			if(renderable.visible && renderable.renderable) PIXI.WebGLGraphics.renderGraphics(renderable, projection);//, projectionMatrix);
+			if(worldVisible && renderable.renderable) PIXI.WebGLGraphics.renderGraphics(renderable, projection);//, projectionMatrix);
 		}
 		else if(renderable instanceof PIXI.FilterBlock)
 		{
@@ -5460,9 +5419,7 @@ PIXI.WebGLRenderGroup.prototype.renderSpecific = function(displayObject, project
 	PIXI.WebGLRenderer.updateTextures();
 	
 	var gl = this.gl;
-	this.checkVisibility(displayObject, displayObject.visible);
-	
-//	gl.uniformMatrix4fv(PIXI.shaderProgram.mvMatrixUniform, false, projectionMatrix);
+
 	gl.uniform2f(PIXI.shaderProgram.projectionVector, projection.x, projection.y);
 
 	// to do!
@@ -5617,21 +5574,23 @@ PIXI.WebGLRenderGroup.prototype.renderSpecific = function(displayObject, project
  */
 PIXI.WebGLRenderGroup.prototype.renderSpecial = function(renderable, projection)
 {
+	var worldVisible = renderable.vcount === PIXI.visibleCount
+
 	if(renderable instanceof PIXI.TilingSprite)
 	{
-		if(renderable.visible)this.renderTilingSprite(renderable, projection);
+		if(worldVisible)this.renderTilingSprite(renderable, projection);
 	}
 	else if(renderable instanceof PIXI.Strip)
 	{
-		if(renderable.visible)this.renderStrip(renderable, projection);
+		if(worldVisible)this.renderStrip(renderable, projection);
 	}
 	else if(renderable instanceof PIXI.CustomRenderable)
 	{
-		if(renderable.visible) renderable.renderWebGL(this, projection);
+		if(worldVisible) renderable.renderWebGL(this, projection);
 	}
 	else if(renderable instanceof PIXI.Graphics)
 	{
-		if(renderable.visible && renderable.renderable) PIXI.WebGLGraphics.renderGraphics(renderable, projection);
+		if(worldVisible && renderable.renderable) PIXI.WebGLGraphics.renderGraphics(renderable, projection);
 	}
 	else if(renderable instanceof PIXI.FilterBlock)
 	{
@@ -5661,42 +5620,6 @@ PIXI.WebGLRenderGroup.prototype.renderSpecial = function(renderable, projection)
 			gl.disable(gl.STENCIL_TEST);
 		}
 	}
-}
-
-/**
- * Checks the visibility of a displayObject
- *
- * @method checkVisibility
- * @param displayObject {DisplayObject}
- * @param globalVisible {Boolean}
- * @private
- */
-PIXI.WebGLRenderGroup.prototype.checkVisibility = function(displayObject, globalVisible)
-{
-	// give the dp a reference to its renderGroup...
-	var children = displayObject.children;
-	//displayObject.worldVisible = globalVisible;
-	for (var i=0; i < children.length; i++) 
-	{
-		var child = children[i];
-		
-		// TODO optimize... should'nt need to loop through everything all the time
-		child.worldVisible = child.visible && globalVisible;
-		
-		// everything should have a batch!
-		// time to see whats new!
-		if(child.textureChange)
-		{
-			child.textureChange = false;
-			if(child.worldVisible)this.updateTexture(child);
-			// update texture!!
-		}
-		
-		if(child.children.length > 0)
-		{
-			this.checkVisibility(child, child.worldVisible);
-		}
-	};
 }
 
 /**
@@ -6588,16 +6511,12 @@ PIXI.CanvasRenderer.prototype.renderDisplayObject = function(displayObject)
 				context.worldAlpha = 0;
 				
 				PIXI.CanvasGraphics.renderGraphicsMask(displayObject.mask, context);
-		//		context.fillStyle = 0xFF0000;
-			//	context.fillRect(0, 0, 200, 200);
 				context.clip();
 				
 				displayObject.mask.worldAlpha = cacheAlpha;
-				//context.globalCompositeOperation = 'lighter';
 			}
 			else
 			{
-				//context.globalCompositeOperation = 'source-over';
 				context.restore();
 			}
 		}
@@ -6691,7 +6610,7 @@ PIXI.CanvasRenderer.prototype.renderTilingSprite = function(sprite)
 PIXI.CanvasRenderer.prototype.renderStrip = function(strip)
 {
 	var context = this.context;
-	//context.globalCompositeOperation = 'lighter';
+
 	// draw triangles!!
 	var verticies = strip.verticies;
 	var uvs = strip.uvs;
@@ -6718,8 +6637,6 @@ PIXI.CanvasRenderer.prototype.renderStrip = function(strip)
 		context.lineTo(x2, y2);
 		context.closePath();
 		
-	//	context.fillStyle = "white"//rgb(1, 1, 1,1));
-	//	context.fill();
 		context.clip();
 		
 		
@@ -6743,7 +6660,6 @@ PIXI.CanvasRenderer.prototype.renderStrip = function(strip)
 	  	context.restore();
 	};
 	
-//	context.globalCompositeOperation = 'source-over';	
 }
 
 /**
@@ -6786,8 +6702,6 @@ PIXI.CanvasGraphics.renderGraphics = function(graphics, context)
 		
 		if(data.type == PIXI.Graphics.POLY)
 		{
-			//if(data.lineWidth <= 0)continue;
-			
 			context.beginPath();
 			
 			context.moveTo(points[0], points[1]);
@@ -6926,8 +6840,6 @@ PIXI.CanvasGraphics.renderGraphicsMask = function(graphics, context)
 		
 		if(data.type == PIXI.Graphics.POLY)
 		{
-			//if(data.lineWidth <= 0)continue;
-			
 			context.beginPath();
 			context.moveTo(points[0], points[1]);
 			
@@ -7124,7 +7036,7 @@ PIXI.Graphics.prototype.beginFill = function(color, alpha)
 {
 	this.filling = true;
 	this.fillColor = color || 0;
-	this.fillAlpha = alpha || 1;
+	this.fillAlpha = (alpha == undefined) ? 1 : alpha;
 }
 
 /**
@@ -7586,10 +7498,10 @@ PIXI.TilingSprite.prototype.onTextureUpdate = function(event)
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
  * based on pixi impact spine implementation made by Eemeli Kelokorpi (@ekelokorpi) https://github.com/ekelokorpi
- * 
+ *
  * Awesome JS run time provided by EsotericSoftware
  * https://github.com/EsotericSoftware/spine-runtimes
- * 
+ *
  */
 
 /**
@@ -7602,48 +7514,41 @@ PIXI.TilingSprite.prototype.onTextureUpdate = function(event)
  * @constructor
  * @param url {String} The url of the spine anim file to be used
  */
-PIXI.Spine = function(url)
-{
+PIXI.Spine = function (url) {
 	PIXI.DisplayObjectContainer.call(this);
-	
+
 	this.spineData = PIXI.AnimCache[url];
-	
-	if(!this.spineData)
-	{
+
+	if (!this.spineData) {
 		throw new Error("Spine data must be preloaded using PIXI.SpineLoader or PIXI.AssetLoader: " + url);
-		return;
 	}
-	
-	this.count = 0;
-	
-	this.sprites = [];
-	
+
 	this.skeleton = new spine.Skeleton(this.spineData);
 	this.skeleton.updateWorldTransform();
 
-	this.stateData = new spine.AnimationStateData(this.spineData);	
+	this.stateData = new spine.AnimationStateData(this.spineData);
 	this.state = new spine.AnimationState(this.stateData);
-	
-	// add the sprites..
-	for (var i = 0; i < this.skeleton.drawOrder.length; i++) {
-		
-		var attachmentName = this.skeleton.drawOrder[i].data.attachmentName;
-		
-		// kind of an assumtion here. that its a png
-		if(!PIXI.TextureCache[attachmentName])
-		{
-			attachmentName += ".png";
-		}
-		
-		
-		var sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(attachmentName));
-		sprite.anchor.x = sprite.anchor.y = 0.5;
-		this.addChild(sprite);
-		this.sprites.push(sprite);
-	};
-}
 
-PIXI.Spine.prototype = Object.create( PIXI.DisplayObjectContainer.prototype );
+	this.slotContainers = [];
+
+	for (var i = 0, n = this.skeleton.drawOrder.length; i < n; i++) {
+		var slot = this.skeleton.drawOrder[i];
+		var attachment = slot.attachment;
+		var slotContainer = new PIXI.DisplayObjectContainer();
+		this.slotContainers.push(slotContainer);
+		this.addChild(slotContainer);
+		if (!(attachment instanceof spine.RegionAttachment)) {
+			continue;
+		}
+		var spriteName = attachment.rendererObject.name;
+		var sprite = this.createSprite(slot, attachment.rendererObject);
+		slot.currentSprite = sprite;
+		slot.currentSpriteName = spriteName;
+		slotContainer.addChild(sprite);
+	}
+};
+
+PIXI.Spine.prototype = Object.create(PIXI.DisplayObjectContainer.prototype);
 PIXI.Spine.prototype.constructor = PIXI.Spine;
 
 /*
@@ -7652,49 +7557,68 @@ PIXI.Spine.prototype.constructor = PIXI.Spine;
  * @method updateTransform
  * @private
  */
-PIXI.Spine.prototype.updateTransform = function()
-{
-	// TODO should make this time based really..
-	this.state.update(1/60);
+PIXI.Spine.prototype.updateTransform = function () {
+	this.lastTime = this.lastTime || Date.now();
+	var timeDelta = (Date.now() - this.lastTime) * 0.001;
+	this.lastTime = Date.now();
+	this.state.update(timeDelta);
 	this.state.apply(this.skeleton);
 	this.skeleton.updateWorldTransform();
 
-	
-	for (var i = 0; i < this.skeleton.drawOrder.length; i++) 
-	{
-		var slot = this.skeleton.drawOrder[i];
+	var drawOrder = this.skeleton.drawOrder;
+	for (var i = 0, n = drawOrder.length; i < n; i++) {
+		var slot = drawOrder[i];
+		var attachment = slot.attachment;
+		var slotContainer = this.slotContainers[i];
+		if (!(attachment instanceof spine.RegionAttachment)) {
+			slotContainer.visible = false;
+			continue;
+		}
 
-		var x = slot.bone.worldX + slot.attachment.x * slot.bone.m00 + slot.attachment.y * slot.bone.m01 + slot.attachment.width * 0.5;
-		var y = slot.bone.worldY + slot.attachment.x * slot.bone.m10 + slot.attachment.y * slot.bone.m11 + slot.attachment.height * 0.5;
-		//console.log(x + ' : ' + y);
-		
-		 
-			//console.log(slot.attachment.name)
-			if(slot.cacheName != slot.attachment.name)
-			{
-				var attachmentName = slot.attachment.name;
-		
-				if(!PIXI.TextureCache[attachmentName])
-				{
-					attachmentName += ".png";
+		if (attachment.rendererObject) {
+			if (!slot.currentSpriteName || slot.currentSpriteName != attachment.name) {
+				var spriteName = attachment.rendererObject.name;
+				if (slot.currentSprite !== undefined) {
+					slot.currentSprite.visible = false;
 				}
-				
-				this.sprites[i].setTexture(PIXI.TextureCache[attachmentName]);
-				
-				slot.cacheName = slot.attachment.name;
+				slot.sprites = slot.sprites || {};
+				if (slot.sprites[spriteName] !== undefined) {
+					slot.sprites[spriteName].visible = true;
+				} else {
+					var sprite = this.createSprite(slot, attachment.rendererObject);
+					slotContainer.addChild(sprite);
+				}
+				slot.currentSprite = slot.sprites[spriteName];
+				slot.currentSpriteName = spriteName;
 			}
-		
-		x += -((slot.attachment.width * (slot.bone.worldScaleX + slot.attachment.scaleX - 1))>>1);
-		y += -((slot.attachment.height * (slot.bone.worldScaleY + slot.attachment.scaleY - 1))>>1);
-		
-		
-		this.sprites[i].position.x = x;
-		this.sprites[i].position.y = y;
-		this.sprites[i].rotation = (-(slot.bone.worldRotation + slot.attachment.rotation)) * (Math.PI/180);
-	}	
-	
+		}
+		slotContainer.visible = true;
+
+		var bone = slot.bone;
+
+		slotContainer.position.x = bone.worldX + attachment.x * bone.m00 + attachment.y * bone.m01;
+		slotContainer.position.y = bone.worldY + attachment.x * bone.m10 + attachment.y * bone.m11;
+		slotContainer.scale.x = bone.worldScaleX;
+		slotContainer.scale.y = bone.worldScaleY;
+
+		slotContainer.rotation = -(slot.bone.worldRotation * Math.PI / 180);
+	}
+
 	PIXI.DisplayObjectContainer.prototype.updateTransform.call(this);
-}
+};
+
+
+PIXI.Spine.prototype.createSprite = function (slot, descriptor) {
+	var name = PIXI.TextureCache[descriptor.name] ? descriptor.name : descriptor.name + ".png";
+	var sprite = new PIXI.Sprite(PIXI.Texture.fromFrame(name));
+	sprite.scale = descriptor.scale;
+	sprite.rotation = descriptor.rotation;
+	sprite.anchor.x = sprite.anchor.y = 0.5;
+
+	slot.sprites = slot.sprites || {};
+	slot.sprites[descriptor.name] = sprite;
+	return sprite;
+};
 
 /*
  * Awesome JS run time provided by EsotericSoftware
@@ -7810,7 +7734,7 @@ spine.Slot.prototype = {
 		this.g = data.g;
 		this.b = data.b;
 		this.a = data.a;
-		
+
 		var slotDatas = this.skeleton.data.slots;
 		for (var i = 0, n = slotDatas.length; i < n; i++) {
 			if (slotDatas[i] == data) {
@@ -8041,6 +7965,7 @@ spine.TranslateTimeline.prototype = {
 		var frameTime = frames[frameIndex];
 		var percent = 1 - (time - frameTime) / (frames[frameIndex + -3/*LAST_FRAME_TIME*/] - frameTime);
 		percent = this.curves.getCurvePercent(frameIndex / 3 - 1, percent);
+
 		bone.x += (bone.data.x + lastFrameX + (frames[frameIndex + 1/*FRAME_X*/] - lastFrameX) * percent - bone.x) * alpha;
 		bone.y += (bone.data.y + lastFrameY + (frames[frameIndex + 2/*FRAME_Y*/] - lastFrameY) * percent - bone.y) * alpha;
 	}
@@ -8065,14 +7990,12 @@ spine.ScaleTimeline.prototype = {
 	apply: function (skeleton, time, alpha) {
 		var frames = this.frames;
 		if (time < frames[0]) return; // Time is before first frame.
-		
+
 		var bone = skeleton.bones[this.boneIndex];
 
 		if (time >= frames[frames.length - 3]) { // Time is after last frame.
 			bone.scaleX += (bone.data.scaleX - 1 + frames[frames.length - 2] - bone.scaleX) * alpha;
 			bone.scaleY += (bone.data.scaleY - 1 + frames[frames.length - 1] - bone.scaleY) * alpha;
-			
-			
 			return;
 		}
 
@@ -8110,6 +8033,7 @@ spine.ColorTimeline.prototype = {
 	apply: function (skeleton, time, alpha) {
 		var frames = this.frames;
 		if (time < frames[0]) return; // Time is before first frame.
+
 		var slot = skeleton.slots[this.slotIndex];
 
 		if (time >= frames[frames.length - 5]) { // Time is after last frame.
@@ -8159,7 +8083,7 @@ spine.AttachmentTimeline = function (frameCount) {
 spine.AttachmentTimeline.prototype = {
 	slotIndex: 0,
 	getFrameCount: function () {
-		return this.frames.length / 2;
+            return this.frames.length;
 	},
 	setFrame: function (frameIndex, time, attachmentName) {
 		this.frames[frameIndex] = time;
@@ -8176,11 +8100,6 @@ spine.AttachmentTimeline.prototype = {
 			frameIndex = spine.binarySearch(frames, time, 1) - 1;
 
 		var attachmentName = this.attachmentNames[frameIndex];
-		//console.log(skeleton.slots[this.slotIndex])
-		
-		// change the name!
-	//	skeleton.slots[this.slotIndex].attachmentName = attachmentName;
-		
 		skeleton.slots[this.slotIndex].setAttachment(!attachmentName ? null : skeleton.getAttachmentBySlotIndex(this.slotIndex, attachmentName));
 	}
 };
@@ -8352,11 +8271,9 @@ spine.Skeleton.prototype = {
 			if (slot.data.name == slotName) {
 				var attachment = null;
 				if (attachmentName) {
-					
 					attachment = this.getAttachment(i, attachmentName);
 					if (attachment == null) throw "Attachment not found: " + attachmentName + ", for slot: " + slotName;
 				}
-				
 				slot.setAttachment(attachment);
 				return;
 			}
@@ -8438,7 +8355,6 @@ spine.RegionAttachment.prototype = {
 		offset[7/*Y4*/] = localYCos + localX2Sin;
 	},
 	computeVertices: function (x, y, bone, vertices) {
-		
 		x += bone.worldX;
 		y += bone.worldY;
 		var m00 = bone.m00;
@@ -8462,6 +8378,7 @@ spine.AnimationStateData = function (skeletonData) {
 	this.animationToMixTime = {};
 };
 spine.AnimationStateData.prototype = {
+        defaultMix: 0,
 	setMixByName: function (fromName, toName, duration) {
 		var from = this.skeletonData.findAnimation(fromName);
 		if (!from) throw "Animation not found: " + fromName;
@@ -8474,7 +8391,7 @@ spine.AnimationStateData.prototype = {
 	},
 	getMix: function (from, to) {
 		var time = this.animationToMixTime[from.name + ":" + to.name];
-		return time ? time : 0;
+            return time ? time : this.defaultMix;
 	}
 };
 
@@ -8514,7 +8431,7 @@ spine.AnimationState.prototype = {
 				this.previous = null;
 			}
 			this.current.mix(skeleton, this.currentTime, this.currentLoop, alpha);
-		} else 
+		} else
 			this.current.apply(skeleton, this.currentTime, this.currentLoop);
 	},
 	clearAnimation: function () {
@@ -8660,16 +8577,9 @@ spine.SkeletonJson.prototype = {
 		name = map["name"] || name;
 
 		var type = spine.AttachmentType[map["type"] || "region"];
-		
-		// @ekelokorpi
-		// var attachment = this.attachmentLoader.newAttachment(skin, type, name);
-		var attachment = new spine.RegionAttachment();
-		
-		// @Doormat23
-		// add the name of the attachment
-		attachment.name = name;
-		
+
 		if (type == spine.AttachmentType.region) {
+			var attachment = new spine.RegionAttachment();
 			attachment.x = (map["x"] || 0) * this.scale;
 			attachment.y = (map["y"] || 0) * this.scale;
 			attachment.scaleX = map["scaleX"] || 1;
@@ -8678,10 +8588,19 @@ spine.SkeletonJson.prototype = {
 			attachment.width = (map["width"] || 32) * this.scale;
 			attachment.height = (map["height"] || 32) * this.scale;
 			attachment.updateOffset();
+
+			attachment.rendererObject = {};
+			attachment.rendererObject.name = name;
+			attachment.rendererObject.scale = {};
+			attachment.rendererObject.scale.x = attachment.scaleX;
+			attachment.rendererObject.scale.y = attachment.scaleY;
+			attachment.rendererObject.rotation = -attachment.rotation * Math.PI / 180;
+			return attachment;
 		}
 
-		return attachment;
+            throw "Unknown attachment type: " + type;
 	},
+
 	readAnimation: function (name, map, skeletonData) {
 		var timelines = [];
 		var duration = 0;
@@ -8732,7 +8651,7 @@ spine.SkeletonJson.prototype = {
 					}
 					timelines.push(timeline);
 					duration = Math.max(duration, timeline.frames[timeline.getFrameCount() * 3 - 3]);
-					
+
 				} else
 					throw "Invalid timeline type for a bone: " + timelineName + " (" + boneName + ")";
 			}
@@ -8775,8 +8694,8 @@ spine.SkeletonJson.prototype = {
 						timeline.setFrame(frameIndex++, valueMap["time"], valueMap["name"]);
 					}
 					timelines.push(timeline);
-					// PIXI FIX
-					duration = Math.max(duration, timeline.frames[Math.floor(timeline.getFrameCount()) - 1]);
+                        duration = Math.max(duration, timeline.frames[timeline.getFrameCount() - 1]);
+
 				} else
 					throw "Invalid timeline type for a slot: " + timelineName + " (" + slotName + ")";
 			}
@@ -9543,15 +9462,7 @@ PIXI.RenderTexture.prototype.initWebGL = function()
 
 	// create a projection matrix..
 	this.projection = new PIXI.Point(this.width/2 , this.height/2);
-/*
-	this.projectionMatrix =  PIXI.mat4.create();
 
-	this.projectionMatrix[5] = 2/this.height// * 0.5;
-	this.projectionMatrix[13] = -1;
-
-	this.projectionMatrix[0] = 2/this.width;
-	this.projectionMatrix[12] = -1;
-*/
 	// set the correct render function..
 	this.render = this.renderWebGL;
 
@@ -9564,10 +9475,6 @@ PIXI.RenderTexture.prototype.resize = function(width, height)
 
 	this.width = width;
 	this.height = height;
-	
-	//this.frame.width = this.width
-	//this.frame.height = this.height;
-		
 	
 	if(PIXI.gl)
 	{
@@ -9632,6 +9539,7 @@ PIXI.RenderTexture.prototype.renderWebGL = function(displayObject, position, cle
 	var children = displayObject.children;
 
 	//TODO -? create a new one??? dont think so!
+	var originalWorldTransform = displayObject.worldTransform;
 	displayObject.worldTransform = PIXI.mat3.create();//sthis.indetityMatrix;
 	// modify to flip...
 	displayObject.worldTransform[4] = -1;
@@ -9644,8 +9552,9 @@ PIXI.RenderTexture.prototype.renderWebGL = function(displayObject, position, cle
 		displayObject.worldTransform[5] -= position.y;
 	}
 	
-
-
+	PIXI.visibleCount++;
+	displayObject.vcount = PIXI.visibleCount;
+	
 	for(var i=0,j=children.length; i<j; i++)
 	{
 		children[i].updateTransform();	
@@ -9670,6 +9579,8 @@ PIXI.RenderTexture.prototype.renderWebGL = function(displayObject, position, cle
 		this.renderGroup.setRenderable(displayObject);
 		this.renderGroup.render(this.projection);
 	}
+
+	displayObject.worldTransform = originalWorldTransform;
 }
 
 
@@ -17223,7 +17134,8 @@ gf.plugin = {
         return ha;
     },
     parseTiledProperties: function(obj) {
-        if(!obj) return;
+        if(!obj || obj.__tiledparsed)
+            return obj;
 
         for(var k in obj) {
             var v = obj[k];
@@ -17254,6 +17166,8 @@ gf.plugin = {
             obj.mass = Infinity;
             obj.inertia = Infinity;
         }
+
+        obj.__tiledparsed = true;
 
         return obj;
     }
@@ -18181,6 +18095,8 @@ gf.PhysicsSystem = function(options) {
     );
 
     this.actionQueue = [];
+    this.tickCallbacks = [];
+    this._skip = 0;
 };
 
 gf.inherits(gf.PhysicsSystem, Object, {
@@ -18269,7 +18185,10 @@ gf.inherits(gf.PhysicsSystem, Object, {
 
         return shape;
     },
-    invalidCollisions: function() {
+    nextTick: function(fn) {
+        this.tickCallbacks.push(fn);
+    },
+    reindexStatic: function() {
         this.actionQueue.push(['reindexStatic']);
         this.act();
     },
@@ -18321,6 +18240,13 @@ gf.inherits(gf.PhysicsSystem, Object, {
             return;
 
         this.actionQueue.push(['remove', spr._phys]);
+        this.act();
+    },
+    reindex: function(spr) {
+        if(!spr || !spr._phys || !spr._phys.shape)
+            return;
+
+        this.actionQueue.push(['reindex', spr._phys.shape]);
         this.act();
     },
     addCustomShape: function(spr, poly, sensor) {
@@ -18375,6 +18301,15 @@ gf.inherits(gf.PhysicsSystem, Object, {
 
     },
     update: function(dt) {
+        if(this._paused)
+            return;
+
+        while(this.tickCallbacks.length)
+            (this.tickCallbacks.shift()).call(this);
+
+        if(this._skip)
+            return this._skip--;
+
         //execute the physics step
         this.space.step(dt);
 
@@ -18387,9 +18322,7 @@ gf.inherits(gf.PhysicsSystem, Object, {
             spr.position.y = shape.body.p.y;// + ((spr.anchor.y * shape.height) - (shape.height / 2));
             spr.rotation = shape.body.a;
 
-            if(spr._showHit) {
-                spr.showPhysics();
-            }
+            spr.emit('physUpdate');
         });
     },
     onCollisionBegin: function(arbiter) {//, space) {
@@ -18437,10 +18370,22 @@ gf.inherits(gf.PhysicsSystem, Object, {
             this.onPostStep();
         }
     },
+    pause: function() {
+        this._paused = true;
+    },
+    resume: function() {
+        this._paused = false;
+    },
+    skip: function(num) {
+        this._skip = num;
+    },
+    skipNext: function() {
+        this.skip(1);
+    },
     onPostStep: function() {
         //remove items
         while(this.actionQueue.length) {
-            var a = this.actionQueue.pop(),
+            var a = this.actionQueue.shift(),
                 act = a[0],
                 data = a[1];
 
@@ -18460,10 +18405,6 @@ gf.inherits(gf.PhysicsSystem, Object, {
                     }
 
                     data.spr._phys = data;
-
-                    if(data.spr._showHit) {
-                        data.spr.showPhysics();
-                    }
                     break;
 
                 case 'remove':
@@ -18473,13 +18414,24 @@ gf.inherits(gf.PhysicsSystem, Object, {
                     if(data.shape.space)
                         this.space.removeShape(data.shape);
 
+                    if(data.customShapes) {
+                        for(var i = data.customShapes.length - 1; i > -1; --i) {
+                            this.space.removeShape(data.customShapes[i]);
+                        }
+                    }
+
                     //remove references
                     data.body = null;
                     data.shape.sprite = null;
                     data.shape = null;
+                    data.customShapes = null;
                     break;
 
                 case 'reindex':
+                    this.space.reindexShape(data);
+                    break;
+
+                case 'reindexStatic':
                     this.space.reindexStatic();
                     break;
 
@@ -18579,12 +18531,18 @@ gf.PhysicsSystem.COLLISION_TYPE = {
     this.disablePhysics = function() {
         if(this._psystem) {
             this._psystem.remove(this);
+        }
+    };
 
-            if(this._hit) {
-                this._showHit = false;
-                this.parent.removeChild(this._hit);
-                this._hit = null;
-            }
+    /**
+     * Reindexes the collisions for this sprite, useful when moving the sprite a great deal
+     * (like to a new world)
+     *
+     * @method disablePhysics
+     */
+    this.reindex = function() {
+        if(this._psystem) {
+            this._psystem.reindex(this);
         }
     };
 
@@ -18676,107 +18634,6 @@ gf.PhysicsSystem.COLLISION_TYPE = {
      */
     this.onSeparate = function(obj, colShape, myShape) {
         this.emit('separate', obj, colShape, myShape);
-    };
-
-    /**
-     * Shows the physics body for the sprite
-     *
-     * @method showPhysics
-     */
-    this.showPhysics = function(style) {
-        this._showHit = true;
-        if(!this._phys || !this._phys.body || !this._phys.shape)
-            return;
-
-        //no graphics object created yet
-        if(!this._hit) {
-            this._hit = new PIXI.Graphics();
-
-            this.parent.addChild(this._hit);
-        }
-
-        //pass a new style, or haven't defined one yet
-        if(style || !this._hit.style) {
-            style = this._setStyleDefaults(style);
-            style.sensor = this._setStyleDefaults(style.sensor);
-
-            this._hit.style = style;
-        }
-
-        var p = this._phys.body.p,
-            g = this._hit,
-            c = this._phys.customShapes;
-
-        if(!this._hit.lastPos)
-            this._hit.lastPos = new gf.Point();
-        else if(this._hit.lastPos.x === p.x && this._hit.lastPos.y === p.y)
-            return;
-
-        this._hit.lastPos.x = p.x;
-        this._hit.lastPos.y = p.y;
-
-        g.clear();
-        this._drawPhysicsShape(this._phys.shape, g, p);
-
-        if(c) {
-            for(var i = 0; i < c.length; ++i) {
-                this._drawPhysicsShape(c[i], g, p);
-            }
-        }
-    };
-
-    this._setStyleDefaults = function(style) {
-        style = style || {};
-        style.size = style.size || 1;
-        style.color = style.color || 0xff00ff;
-        style.alpha = style.alpha || 1;
-
-        return style;
-    };
-
-    this._drawPhysicsShape = function(shape, g, p) {
-        var style = g.style;
-
-        if(shape.sensor)
-            style = style.sensor;
-
-        g.lineStyle(style.size, style.color, style.alpha);
-
-        //circle
-        if(shape.type === 'circle') {
-            var cx = shape.bb_l + ((shape.bb_r - shape.bb_l) / 2),
-                cy = shape.bb_t + ((shape.bb_b - shape.bb_t) / 2);
-
-            g.drawCircle(cx, cy, shape.r);
-        }
-        //polygon
-        else {
-            var sx = shape.verts[0],
-                sy = shape.verts[1];
-
-            g.moveTo(p.x + sx, p.y + sy);
-
-            for(var i = 2; i < shape.verts.length; i+=2) {
-                g.lineTo(
-                    p.x + shape.verts[i],
-                    p.y + shape.verts[i + 1]
-                );
-            }
-
-            g.lineTo(p.x + sx, p.y + sy);
-        }
-    };
-
-    /**
-     * Hides the physics body for the sprite
-     *
-     * @method hidePhysics
-     */
-    this.hidePhysics = function() {
-        this._showHit = false;
-        if(this._hit) {
-            this._hit.visible = false;
-        }
     };
 };
 //you can only have 1 audio context on a page, so we store one for use in each manager
@@ -18944,12 +18801,25 @@ gf.inherits(gf.AudioManager, Object, {
                 var player = this.sounds[key];
                 //loop through the audio nodes
                 for(var i = 0, il = player._nodes.length; i < il; ++i) {
-                    player._nodes[i].muted = m;
+                    player._nodes[i].mute();
                 }
             }
         }
 
         return this;
+    },
+    attach: function(sound) {
+        //TODO: check name collision
+        this.sounds[sound.src] = sound;
+
+        sound._manager = this;
+
+        if(gf.support.webAudio) {
+            for(var i = 0; i < sound._nodes.length; ++i) {
+                sound._nodes[i].disconnect();
+                sound._nodes[i].connect(this.masterGain);
+            }
+        }
     },
     /**
      * Creates a new audio player for a peice of audio
@@ -18987,7 +18857,7 @@ gf.inherits(gf.AudioManager, Object, {
 
         //loop through each source url and pick the first that is compatible
         for(var i = 0, il = settings.urls.length; i < il; ++i) {
-            var url = settings.urls[i].toLowerCase(),
+            var url = settings.urls[i],
                 ext;
 
             //if they pass a format override, use that
@@ -20082,8 +19952,7 @@ gf.inherits(gf.DisplayObjectContainer, PIXI.DisplayObjectContainer, {
      * @method destroy
      */
     destroy: function() {
-        if(this.physics)
-            this.disablePhysics();
+        this.disablePhysics();
 
         if(this.parent)
             this.parent.removeChild(this);
@@ -20352,7 +20221,7 @@ gf.Sprite.TYPE = {
  */
 gf.AnimatedSprite = function(anims, speed, start) {
     if(anims instanceof Array) {
-        anims = { _default: { frames: [anims] } };
+        anims = { _default: { frames: anims } };
         start = '_default';
     } else {
         //massage animations into full format
@@ -20653,24 +20522,30 @@ gf.Camera = function(game, settings) {
 };
 
 gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
+    _fxCallback: function(fx, type, cb) {
+        var ret;
+
+        if(typeof cb === 'function')
+            ret = cb();
+
+        this.fxpools[type].free(fx);
+
+        return ret;
+    },
     /**
      * Makes the camera flash with a certain color
      *
      * @method flash
      * @param [color=0xffffff] {Number} The color to flash the screen with
      * @param [duration=1000] {Number} The time in milliseconds to fade away
+     * @param [alpha=1] {Number} The max opacity to start at (before fading away)
      * @param [callback] {Function} The callback to call when the flash has completed
      * @return {gf.Camera.fx.Flash} Returns the effect object
      */
-    flash: function(color, duration, cb) {
-        var flash = this.fxpools.flash.create(),
-            self = this;
+    flash: function(color, duration, alpha, cb) {
+        var flash = this.fxpools.flash.create();
 
-        return flash.start(color, duration, function() {
-            self.fxpools.flash.free(flash);
-            if(typeof cb === 'function')
-                cb();
-        });
+        return flash.start(color, duration, alpha, this._fxCallback.bind(this, flash, 'flash', cb));
     },
     /**
      * Makes the camera fade into a color
@@ -20678,18 +20553,14 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * @method fade
      * @param [color=0xffffff] {Number} The color to fade into
      * @param [duration=1000] {Number} The time in milliseconds to take to fade in
+     * @param [alpha=1] {Number} The max opacity to get to
      * @param [callback] {Function} The callback to call when the fade has completed
      * @return {gf.Camera.fx.Fade} Returns the effect object
      */
-    fade: function(color, duration, cb) {
-        var fade = this.fxpools.fade.create(),
-            self = this;
+    fade: function(color, duration, alpha, cb) {
+        var fade = this.fxpools.fade.create();
 
-        return fade.start(color, duration, function() {
-            self.fxpools.fade.free(fade);
-            if(typeof cb === 'function')
-                cb();
-        });
+        return fade.start(color, duration, alpha, this._fxCallback.bind(this, fade, 'fade', cb));
     },
     /**
      * Shakes the camera around a bit, to show it who is boss.
@@ -20702,32 +20573,23 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
      * @return {gf.Camera.fx.Shake} Returns the effect object
      */
     shake: function(intensity, duration, direction, cb) {
-        var shake = this.fxpools.shake.create(),
-            self = this;
+        var shake = this.fxpools.shake.create();
 
-        return shake.start(intensity, duration, direction, function() {
-            self.fxpools.shake.free(shake);
-            if(typeof cb === 'function')
-                cb();
-        });
+        return shake.start(intensity, duration, direction, this._fxCallback.bind(this, shake, 'shake', cb));
     },
     /**
      * Adds a mask that will hide the world via a close-in transition.
      *
      * @method scanlines
-     * @param [shape='circle'] {String} The shape of the transition, either 'circle' or 'rectangle'
+     * @param [shape='circle'] {String} The shape of the transition, either 'circle' or 'rectangle' or 'ellipse'
      * @param [duration=1000] {Number} The time in milliseconds it takes to close the transition
+     * @param [position] {gf.Point|gf.Vector} The position to center on, defaults to the center of the screen
      * @return {gf.Camera.fx.Close} Returns the effect object
      */
-    close: function(shape, duration, cb) {
-        var close = this.fxpools.close.create(),
-            self = this;
+    close: function(shape, duration, position, cb) {
+        var close = this.fxpools.close.create();
 
-        return close.start(shape, duration, function() {
-            self.fxpools.close.free(close);
-            if(typeof cb === 'function')
-                cb();
-        });
+        return close.start(shape, duration, position, this._fxCallback.bind(this, close, 'close', cb));
     },
     /**
      * Shows scanlines accross the screen, retro arcade style
@@ -20862,15 +20724,18 @@ gf.inherits(gf.Camera, gf.DisplayObjectContainer, {
 
         if(!dx && !dy) return;
 
+            //world position
         var pos = this.game.world.position,
+            //new world position
             newX = pos.x - dx,
-            newY = pos.y - dy;
+            newY = pos.y - dy,
+            b = this._bounds;
 
         if(this._bounds) {
             if(this._outsideBounds(-newX, -pos.y))
-                dx = 0;
+                dx = dx < 0 ? b.x + pos.x : (b.x + b.width) - this.size.x + pos.x; //how far can we move since dx is too much
             if(this._outsideBounds(-pos.x, -newY))
-                dy = 0;
+                dy = dy < 0 ? b.y + pos.y : (b.y + b.height) - this.size.y + pos.y;
         }
 
         if(dx || dy) {
@@ -21043,21 +20908,33 @@ gf.Camera.fx.Effect = function() {
 
     this.addChild(this.gfx = new PIXI.Graphics());
     this.gfx.visible = false;
+
+    this.done = true;
 };
 
 gf.inherits(gf.Camera.fx.Effect, gf.DisplayObjectContainer, {
     start: function() {
+        this.done = false;
         return this;
     },
     stop: function() {
+        this.done = true;
         return this;
     },
     update: function() {
         return this;
     },
     _complete: function() {
-        if(typeof this.cb === 'function')
-            this.cb();
+        this.done = true;
+
+        if(typeof this.cb === 'function') {
+            var ret = this.cb();
+
+            if(ret !== false)
+                this.stop();
+        } else {
+            this.stop();
+        }
     }
 });
 gf.Camera.fx.Close = function() {
@@ -21065,16 +20942,23 @@ gf.Camera.fx.Close = function() {
 };
 
 gf.inherits(gf.Camera.fx.Close, gf.Camera.fx.Effect, {
-    start: function(shape, duration, cb) {
+    start: function(shape, duration, pos, cb) {
         gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof pos ==='function') {
+            cb = pos;
+            pos = null;
+        }
 
         if(typeof duration === 'function') {
             cb = duration;
+            pos = null;
             duration = null;
         }
 
         if(typeof shape === 'function') {
             cb = shape;
+            pos = null;
             duration = null;
             shape = null;
         }
@@ -21083,19 +20967,24 @@ gf.inherits(gf.Camera.fx.Close, gf.Camera.fx.Effect, {
         this.duration = duration && duration > 0 ? duration : 1000;
         this.cb = cb;
 
-        if(shape === 'circle') {
-            this.cx = this.parent.size.x / 2;
-            this.cy = this.parent.size.y / 2;
-            this.radius = this.maxRadius = Math.max(this.parent.size.x / 2, this.parent.size.y / 2);
-        } else {
-            this.x = 0;
-            this.y = 0;
-            this.w = this.mx = this.parent.size.x;
-            this.h = this.my = this.parent.size.y;
-        }
+        this.cx = pos ? pos.x : this.parent.size.x / 2;
+        this.cy = pos ? pos.y : this.parent.size.y / 2;
+        this.w = this.mx = this.parent.size.x;
+        this.h = this.my = this.parent.size.y;
+        this.radius = this.maxRadius = Math.max(this.w / 2, this.h / 2);
 
         this.gfx.visible = true;
-        this.parent.game.world.mask = this.gfx;
+        this.gfx.position.x = this.cx;
+        this.gfx.position.y = this.cy;
+
+        this.parent.game.activeState.mask = this.gfx;
+
+        if(shape === 'ellipse') {
+            this.gfx.scale.y = 0.5;
+        }
+        else {
+            this.gfx.scale.y = 1;
+        }
 
         return this;
     },
@@ -21105,14 +20994,13 @@ gf.inherits(gf.Camera.fx.Close, gf.Camera.fx.Effect, {
         this.radius = this.sx = this.sy = 0;
         this.gfx.visible = false;
 
-        if(this.parent.game.world.mask === this.gfx)
-            this.parent.game.world.mask = null;
+        if(this.parent.game.activeState.mask === this.gfx)
+            this.parent.game.activeState.mask = null;
 
         return this;
     },
     update: function(dt) {
-        if(!this.gfx.visible)
-            return;
+        if(this.done) return;
 
         var part = (dt * 1000) / this.duration;
 
@@ -21120,32 +21008,30 @@ gf.inherits(gf.Camera.fx.Close, gf.Camera.fx.Effect, {
         this.gfx.beginFill(0xff00ff);
 
         switch(this.shape) {
+            case 'ellipse':
             case 'circle':
                 this.radius -= (part * this.maxRadius);
 
                 if(this.radius <= 0) {
-                    this.stop();
                     this._complete();
                 } else {
-                    this.gfx.drawCircle(this.cx, this.cy, this.radius);
+                    this.gfx.drawCircle(0, 0, this.radius);
                 }
                 break;
 
             case 'rect':
             case 'rectangle':
-                this.x += (part * this.mx) / 2;
-                this.y += (part * this.my) / 2;
                 this.w -= (part * this.mx);
                 this.h -= (part * this.my);
 
-                if(this.x >= (this.mx / 2)) {
-                    this.stop();
+                if(this.w <= 0) {
                     this._complete();
                 } else {
-                    this.gfx.drawRect(this.x, this.y, this.w, this.h);
+                    this.gfx.drawRect(-(this.w / 2), -(this.h / 2), this.w, this.h);
                 }
                 break;
         }
+        this.gfx.endFill();
 
         return this;
     }
@@ -21155,21 +21041,29 @@ gf.Camera.fx.Fade = function() {
 };
 
 gf.inherits(gf.Camera.fx.Fade, gf.Camera.fx.Effect, {
-    start: function(color, duration, cb) {
+    start: function(color, duration, alpha, cb) {
         gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof alpha === 'function') {
+            cb = duration;
+            alpha = null;
+        }
 
         if(typeof duration === 'function') {
             cb = duration;
+            alpha = null;
             duration = null;
         }
 
         if(typeof color === 'function') {
             cb = color;
+            alpha = null;
             duration = null;
             color = null;
         }
 
         color = typeof color === 'number' ? color : 0xFFFFFF;
+        this.goal = alpha || 1;
         this.duration = duration && duration > 0 ? duration : 1000;
         this.cb = cb;
 
@@ -21184,17 +21078,18 @@ gf.inherits(gf.Camera.fx.Fade, gf.Camera.fx.Effect, {
     stop: function() {
         gf.Camera.fx.Effect.prototype.stop.call(this);
 
-        this.gfx.alpha = 1;
+        this.gfx.alpha = 0;
         this.gfx.visible = false;
 
         return this;
     },
     update: function(dt) {
-        if(this.gfx.alpha < 1) {
+        if(this.done) return;
+
+        if(this.gfx.alpha < this.goal) {
             this.gfx.alpha += (dt * 1000) / this.duration;
 
-            if(this.gfx.alpha >= 1) {
-                this.stop();
+            if(this.gfx.alpha >= this.goal) {
                 this._complete();
             }
         }
@@ -21207,26 +21102,34 @@ gf.Camera.fx.Flash = function() {
 };
 
 gf.inherits(gf.Camera.fx.Flash, gf.Camera.fx.Effect, {
-    start: function(color, duration, cb) {
+    start: function(color, duration, alpha, cb) {
         gf.Camera.fx.Effect.prototype.start.call(this);
+
+        if(typeof alpha === 'function') {
+            cb = duration;
+            alpha = null;
+        }
 
         if(typeof duration === 'function') {
             cb = duration;
+            alpha = null;
             duration = null;
         }
 
         if(typeof color === 'function') {
             cb = color;
+            alpha = null;
             duration = null;
             color = null;
         }
 
+        alpha = alpha || 1;
         color = typeof color === 'number' ? color : 0xFFFFFF;
         this.duration = duration && duration > 0 ? duration : 1000;
         this.cb = cb;
 
         this.gfx.visible = true;
-        this.gfx.alpha = 1;
+        this.gfx.alpha = alpha;
         this.gfx.clear();
         this.gfx.beginFill(color);
         this.gfx.drawRect(0, 0, this.parent.size.x, this.parent.size.y);
@@ -21242,11 +21145,12 @@ gf.inherits(gf.Camera.fx.Flash, gf.Camera.fx.Effect, {
         return this;
     },
     update: function(dt) {
+        if(this.done) return;
+
         if(this.gfx.alpha > 0) {
             this.gfx.alpha -= (dt * 1000) / this.duration;
 
             if(this.gfx.alpha <= 0) {
-                this.stop();
                 this._complete();
             }
         }
@@ -21343,31 +21247,29 @@ gf.inherits(gf.Camera.fx.Shake, gf.Camera.fx.Effect, {
         return this;
     },
     update: function(dt) {
-        //update shake effect
-        if(this.duration > 0) {
-            this.duration -= (dt * 1000);
+        if(this.done) return;
 
-            //pan back to the original position
-            this.offset.x = -this.offset.x;
-            this.offset.y = -this.offset.y;
+        this.duration -= (dt * 1000);
+
+        //pan back to the original position
+        this.offset.x = -this.offset.x;
+        this.offset.y = -this.offset.y;
+        this.parent.pan(this.offset.x, this.offset.y);
+
+        //check if we are complete
+        if(this.duration <= 0) {
+            this._complete();
+        }
+        //otherwise do the shake
+        else {
+            //pan to a random offset
+            if((this.direction === gf.Camera.fx.DIRECTION.BOTH) || (this.direction === gf.Camera.fx.DIRECTION.HORIZONTAL))
+                this.offset.x = gf.math.round(Math.random() * this.intensity * this.parent.size.x * 2 - this.intensity * this.parent.size.x);
+
+            if ((this.direction === gf.Camera.fx.DIRECTION.BOTH) || (this.direction === gf.Camera.fx.DIRECTION.VERTICAL))
+                this.offset.y = gf.math.round(Math.random() * this.intensity * this.parent.size.y * 2 - this.intensity * this.parent.size.y);
+
             this.parent.pan(this.offset.x, this.offset.y);
-
-            //check if we are complete
-            if(this.duration <= 0) {
-                this.stop();
-                this._complete();
-            }
-            //otherwise do the shake
-            else {
-                //pan to a random offset
-                if((this.direction === gf.Camera.fx.DIRECTION.BOTH) || (this.direction === gf.Camera.fx.DIRECTION.HORIZONTAL))
-                    this.offset.x = gf.math.round(Math.random() * this.intensity * this.parent.size.x * 2 - this.intensity * this.parent.size.x);
-
-                if ((this.direction === gf.Camera.fx.DIRECTION.BOTH) || (this.direction === gf.Camera.fx.DIRECTION.VERTICAL))
-                    this.offset.y = gf.math.round(Math.random() * this.intensity * this.parent.size.y * 2 - this.intensity * this.parent.size.y);
-
-                this.parent.pan(this.offset.x, this.offset.y);
-            }
         }
     }
 });
@@ -21493,6 +21395,15 @@ gf.TextureFont = function(font, settings) {
     this.lineHeight = 1;
 
     /**
+     * The fixed width for all characters, 0 means not forced monospace
+     *
+     * @property monospace
+     * @type Number
+     * @default 0
+     */
+    this.monospace = 0;
+
+    /**
      * The textures for all the characters in the alphabet
      *
      * @property textures
@@ -21531,8 +21442,15 @@ gf.inherits(gf.TextureFont, gf.DisplayObjectContainer, {
      * @return Sprite
      */
     _getSprite: function(ch) {
+        var offy = 0;
+
         if(this.map[ch])
             ch = this.map[ch];
+
+        if(typeof ch === 'object') {
+            offy = ch.yoffset || 0;
+            ch = ch.name;
+        }
 
         //skips spaces
         if(ch === '' || ch === ' ')
@@ -21552,6 +21470,10 @@ gf.inherits(gf.TextureFont, gf.DisplayObjectContainer, {
 
         spr.setTexture(texture);
         spr.visible = true;
+
+        spr.anchor.y = 1;
+        spr.position.x = 0;
+        spr.position.y = offy;
 
         return spr;
     },
@@ -21578,6 +21500,7 @@ gf.inherits(gf.TextureFont, gf.DisplayObjectContainer, {
      */
     setText: function(txt) {
         this.text = txt;
+        this.width = 0;
 
         //free all sprites
         for(var c = 0, cl = this.children.length; c < cl; ++c) {
@@ -21601,20 +21524,23 @@ gf.inherits(gf.TextureFont, gf.DisplayObjectContainer, {
                     spr = this._getSprite(ch);
 
                 if(spr !== null) {
-                    spr.position.x = x;
-                    spr.position.y = y;
+                    spr.position.x += x;
+                    spr.position.y += y;
 
                     if(spr.texture.frame.height > h)
                         h = spr.texture.frame.height;
 
-                    x += spr.texture.frame.width * this.lineWidth;
+                    x += this.monospace ? this.monospace * this.lineWidth : spr.texture.frame.width * this.lineWidth;
                 } else {
-                    x += this.spaceSize * this.lineWidth;
+                    x += this.monospace ? this.monospace * this.lineWidth : this.spaceSize * this.lineWidth;
                 }
 
             }
 
+            this.width = Math.max(x, this.width);
+
             y += h * this.lineHeight;
+            x = 0;
         }
     }
 });
@@ -21752,6 +21678,15 @@ gf.Game = function(contId, settings) {
     this.spritepool = new gf.SpritePool();
 
     /**
+     * The input instance for this game
+     *
+     * @property input
+     * @type InputManager
+     * @readOnly
+     */
+    this.input = new gf.InputManager(this.renderer.view);
+
+    /**
      * The GameStates added to the game
      *
      * @property states
@@ -21794,7 +21729,7 @@ gf.Game = function(contId, settings) {
 
     //define getters for common properties in GameState
     var self = this;
-    ['audio', 'input', 'physics', 'camera', 'world'].forEach(function(prop) {
+    ['audio', 'physics', 'camera', 'world'].forEach(function(prop) {
         self.__defineGetter__(prop, function() {
             return self.activeState[prop];
         });
@@ -22029,9 +21964,16 @@ gf.inherits(gf.Game, Object, {
         //start render loop
         window.requestAnimFrame(this._tick.bind(this));
 
+        var dt = this.clock.getDelta();
+
+        //gather input from user
+        this.timings.inputStart = this.timings._timer.now();
+        this.input.update(dt);
+        this.timings.inputEnd = this.timings._timer.now();
+
         //update this game state
         this.timings.stateStart = this.timings._timer.now();
-        this.activeState.update(this.clock.getDelta());
+        this.activeState.update(dt);
         this.timings.stateEnd = this.timings._timer.now();
 
         //render scene
@@ -22095,15 +22037,6 @@ gf.GameState = function(name, settings) {
     this.physics = new gf.PhysicsSystem({ gravity: settings.gravity });
 
     /**
-     * The input instance for this game
-     *
-     * @property input
-     * @type InputManager
-     * @readOnly
-     */
-    this.input = null; //need to be added to a game first
-
-    /**
      * The camera you view the scene through
      *
      * @property camera
@@ -22150,8 +22083,6 @@ gf.inherits(gf.GameState, gf.DisplayObjectContainer, {
      */
     _setGame: function(game) {
         this._game = game;
-
-        this.input = new gf.InputManager(game.renderer.view);
 
         if(this.camera)
             this.removeChild(this.camera);
@@ -22228,11 +22159,6 @@ gf.inherits(gf.GameState, gf.DisplayObjectContainer, {
      * @private
      */
     update: function(dt) {
-        //gather input from user
-        this.game.timings.inputStart = this.game.timings._timer.now();
-        this.input.update(dt);
-        this.game.timings.inputEnd = this.game.timings._timer.now();
-
         //update any camera effects
         this.game.timings.cameraStart = this.game.timings._timer.now();
         this.camera.update(dt);
@@ -22845,7 +22771,8 @@ gf.input.GP_BUTTON = {
     PAD_TOP: 12, // Directional (discrete) pad
     PAD_BOTTOM: 13,
     PAD_LEFT: 14,
-    PAD_RIGHT: 15
+    PAD_RIGHT: 15,
+    SYSTEM_MENU: 16   // on console controllers this would be the button to open the system menu
 };
 gf.input.getGpButtonName = function(i) {
     for(var k in gf.input.GP_BUTTON) {
@@ -22919,6 +22846,7 @@ gf.inherits(gf.input.GamepadButtons, gf.input.Input, {
         }
     }
 });
+
 /**
  * Bindable Gamepad Axes
  *
@@ -23206,7 +23134,7 @@ gf.inherits(gf.AssetLoader, Object, {
         for(var i = 0, il = assets.length; i < il; ++i) {
             var name = typeof assets[i] === 'string' ? assets[i] : assets[i].name,
                 url = typeof assets[i] === 'string' ? assets[i] : (assets[i].src || assets[i].url || assets[i].uri),
-                ext = assets[i].type || (url instanceof Array ? 'audio' : null) || url.split('.').pop().toLowerCase(), //assume arrays of urls are for audio
+                ext = assets[i].type || (url instanceof Array ? 'audio' : null) || url.split('.').pop(), //assume arrays of urls are for audio
                 Loader = this.loaders[ext];
 
             if(!Loader)
@@ -23850,7 +23778,7 @@ gf.inherits(gf.TiledMap, gf.Map, {
      */
     getTileset: function(tileId) {
         for(var i = 0, il = this.tilesets.length; i < il; ++i)
-            if(tileId >= this.tilesets[i].firstgid && tileId <= this.tilesets[i].lastgid)
+            if(this.tilesets[i].contains(tileId))
                 return this.tilesets[i];
     },
     /**
@@ -23862,9 +23790,19 @@ gf.inherits(gf.TiledMap, gf.Map, {
         for(var i = 0, il = this.children.length; i < il; ++i) {
             var o = this.children[i];
 
-            if(o instanceof gf.TiledLayer) {
+            if(o.type === 'tilelayer') {
                 o.resize(width, height);
             }
+        }
+    },
+    destroy: function() {
+        gf.Map.prototype.destroy.call(this);
+
+        for(var i = this.children.length - 1; i > -1; --i) {
+            var o = this.children[i];
+
+            if(o.destroy)
+                o.destroy();
         }
     },
     /**
@@ -23876,8 +23814,22 @@ gf.inherits(gf.TiledMap, gf.Map, {
         for(var i = 0, il = this.children.length; i < il; ++i) {
             var o = this.children[i];
 
-            if(o instanceof gf.TiledObjectGroup) {
+            if(o.type === 'objectgroup') {
                 o.spawn();
+            }
+        }
+    },
+    /**
+     * Spawns all the objects in the TiledObjectGroups of this map
+     *
+     * @method spawnObjects
+     */
+    despawnObjects: function() {
+        for(var i = 0, il = this.children.length; i < il; ++i) {
+            var o = this.children[i];
+
+            if(o.type === 'objectgroup') {
+                o.despawn();
             }
         }
     },
@@ -23945,7 +23897,7 @@ gf.TiledLayer = function(layer) {
      * @property tiles
      * @type Object
      */
-    this.tiles = {};
+    this.tiles = [];
 
     /**
      * The user-defined properties of this group. Usually defined in the TiledEditor
@@ -23956,6 +23908,7 @@ gf.TiledLayer = function(layer) {
     this.properties = gf.utils.parseTiledProperties(layer.properties) || {};
 
     //translate some tiled properties to our inherited properties
+    this.type = layer.type;
     this.position.x = layer.x;
     this.position.y = layer.y;
     this.alpha = layer.opacity;
@@ -23990,32 +23943,33 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
             return;
         }
 
+        //copy down our tilesize
         if(!this.tileSize)
             this.tileSize = this.parent.tileSize;
 
         //clear all the visual tiles
         this.clearTiles();
 
+        //render the tiles on the screen
+        var fn;
         if(this.parent.orientation === 'isometric') {
-            this._renderIsoTiles(
-                -this.parent.position.x,
-                -this.parent.position.y,
-                width,
-                height
-            );
-        }
-        else {
-            this._renderOrthoTiles(
-                -this.parent.position.x,
-                -this.parent.position.y,
-                width,
-                height
-            );
+            fn = '_renderIsoTiles';
+        } else {
+            fn = '_renderOrthoTiles';
         }
 
+        this[fn](
+            -this.parent.position.x,
+            -this.parent.position.y,
+            width,
+            height
+        );
+
         this._updateRenderSq();
+
         if(this.hasPhysics) {
-            this.parent.parent.physics.invalidCollisions();
+            //this -> map -> state -> physics
+            this.parent.parent.physics.reindexStatic();
         }
     },
     //render the map onto a canvas once to use as a preRendered texture
@@ -24103,13 +24057,15 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         //convert to tile coords
         sx = Math.floor(sx / this.parent.scaledTileSize.x);
         sy = Math.floor(sy / this.parent.scaledTileSize.y);
+
         //ensure we don't go below 0
         sx = sx < 0 ? 0 : sx;
         sy = sy < 0 ? 0 : sy;
 
-        //convert to tile coords
+        //convert to tile sizes
         sw = Math.ceil(sw / this.parent.scaledTileSize.x) + 1;
         sh = Math.ceil(sh / this.parent.scaledTileSize.y) + 1;
+
         //ensure we don't go outside the map size
         sw = (sx + sw > this.parent.size.x) ? (this.parent.size.x - sx) : sw;
         sh = (sy + sh > this.parent.size.y) ? (this.parent.size.y - sy) : sh;
@@ -24120,7 +24076,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
 
         for(var x = sx; x < endX; ++x) {
             for(var y = sy; y < endY; ++y) {
-                this.moveTileSprite(x, y, x, y);
+                this.moveTileSprite(-1, -1, x, y);
             }
         }
 
@@ -24138,8 +24094,9 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         this._panDelta.y = this.parent.position.y % this.parent.scaledTileSize.y;
     },
     _renderIsoTiles: function(sx, sy, sw, sh) {
+        //set the rendered area
         this._rendered.x = sx;
-        this._rendered.y = sx;
+        this._rendered.y = sy;
         this._rendered.width = sw;
         this._rendered.height = sh;
 
@@ -24154,10 +24111,10 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         sh = Math.ceil(sh / (scaled.y / 2));
 
         //in this function i,j represents the coord system in the isometric plane
-        var iStart = Math.floor(this._isoToI(sx, sy)) - 1,
+        var iStart = Math.floor(this._isoToI(sx, sy)),
             jStart = Math.floor(this._isoToJ(sx, sy)),
-            iMax = Math.ceil(this._isoToI(sx + sw, sy + sh)) + 1,
-            jMax = Math.ceil(this._isoToJ(sx, sy + sh)) + 2,
+            iMax = Math.ceil(this._isoToI(sx + sw, sy + sh)),
+            jMax = Math.ceil(this._isoToJ(sx, sy + sh)),
             jMin = Math.floor(this._isoToJ(sx + sw, sy)),
 
             iParentMax = this.parent.size.x,
@@ -24166,14 +24123,15 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
             nBump = false, //have we reached minimum j (the bump)
             mBump = false, //have we reached maximum j (the bump)
             n = 0, nBuffer = 1,
-            m = 1, mBuffer = 0;
+            m = 2, mBuffer = 0;
 
         for(var i = iStart; i < iMax; ++i) {
+            //render all the tiles for this iteration
             for(var j = jStart - n; j < jStart + m; ++j) {
                 if(i < 0 || j < 0 || i >= iParentMax || j >= jParentMax)
                     continue;
 
-                this.moveTileSprite(i, j, i, j);
+                this.moveTileSprite(-1, -1, i, j);
             }
 
             if(!nBump) {
@@ -24181,7 +24139,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
                 n++;
 
                 //check if we reached lowest j point
-                if((jStart - n) === jMin) {
+                if((jStart - n) === jMin - 1) {
                     nBump = true;
                 }
             } else {
@@ -24199,7 +24157,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
                 //we have not reached the highest j point, increase m to go even higher next iteration
                 m++;
 
-                if((jStart + m) === jMax) {
+                if((jStart + m) === jMax + 1) {
                     mBump = true;
                 }
             } else {
@@ -24216,20 +24174,9 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
     },
     _freeTile: function(tx, ty) {
         if(this.tiles[tx] && this.tiles[tx][ty]) {
-            var t = this.tiles[tx][ty];
-
-            if(t) {
-                t.visible = false;
-                t.disablePhysics();
-                this._tilePool.push(t);
-                this.tiles[tx][ty] = null;
-                this.removeChild(t);
-            }
+            this.clearTile(this.tiles[tx][ty]);
+            this.tiles[tx][ty] = null;
         }
-
-        // make this first-in-first-out instead of a stack
-        // see: http://jsperf.com/queue-push-unshift-vs-shift-pop/3
-        //this._tilePool.reverse();
     },
     _isoToI: function(x, y) {
         // converts world isometric coordinates into the i position of the 2D-Array
@@ -24239,18 +24186,30 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         // converts world isometric coordinates into the j position of the 2D-Array
         return ((y - x) / 2);
     },
+    destroy: function() {
+        this.clearTiles(true);
+        gf.Layer.prototype.destroy.call(this);
+    },
     /**
      * Clears all the tiles currently used to render the layer
      *
      * @method clearTiles
      */
-    clearTiles: function() {
-        //hide/free each tile and remove from the memory map
-        for(var x in this.tiles) {
-            for(var y in this.tiles[x]) {
-                this._freeTile(x, y);
-            }
+    clearTiles: function(remove) {
+        for(var c = this.children.length - 1; c > -1; --c) {
+            this.clearTile(this.children[c], remove);
         }
+
+        this.tiles.length = 0;
+    },
+    clearTile: function(tile, remove) {
+        tile.visible = false;
+        tile.disablePhysics();
+
+        if(remove)
+            this.removeChild(tile);
+        else
+            this._tilePool.push(tile);
     },
     /**
      * Moves a tile sprite from one position to another, and creates a new tile
@@ -24264,6 +24223,11 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
      * @return {Tile} The sprite to display
      */
     moveTileSprite: function(fromTileX, fromTileY, toTileX, toTileY) {
+        //if off the map, just ignore it
+        if(toTileX < 0 || toTileY < 0 || toTileX >= this.parent.size.x || toTileY >= this.parent.size.y) {
+            return;
+        }
+
         var tile,
             id = (toTileX + (toTileY * this.size.x)),
             tileId = this.tileIds[id],
@@ -24308,7 +24272,6 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         if(this.tiles[fromTileX] && this.tiles[fromTileX][fromTileY]) {
             tile = this.tiles[fromTileX][fromTileY];
             this.tiles[fromTileX][fromTileY] = null;
-
             tile.disablePhysics();
         }
         //otherwise grab a new tile from the pool
@@ -24323,8 +24286,8 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
             tile.mass = props.mass;
             tile.inertia = props.inertia;
             tile.anchor.y = 1;
+            this.addChild(tile);
         }
-        this.addChild(tile);
 
         tile.collisionType = props.type;
         tile.visible = true;
@@ -24337,9 +24300,6 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         if(props.mass) {
             this.hasPhysics = true;
             tile.enablePhysics(this.parent.parent.physics); //this.TiledMap.GameState.physics
-
-            if(this.parent._showPhysics)
-                tile.showPhysics();
         }
 
         //pass through all events
@@ -24355,7 +24315,7 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
 
         //update sprite position in the map
         if(!this.tiles[toTileX])
-            this.tiles[toTileX] = {};
+            this.tiles[toTileX] = [];
 
         this.tiles[toTileX][toTileY] = tile;
 
@@ -24383,16 +24343,38 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         if(this.preRender)
             return;
 
-        //isometric pan (just re render everything)
-        if(this.parent.orientation === 'isometric')
-            return this.resize(this._rendered.width, this._rendered.height);
-
-        //optimized ortho pan, move only what is needed to move
+        //track panning delta so we know when to render
         this._panDelta.x += dx;
         this._panDelta.y += dy;
 
+        //Due to the way isometric tiles fit together we have to render a
+        //direction if they move half of a tile. We do that calculation here
+        //so that we can use it later to check if we have moved enough. If the
+        //map is ortho, then the scaled tile size is used normally.
+
+        var iso = this.parent.orientation === 'isometric',
+            factor = iso ? 0.5 : 1,
+            tszX = this.parent.scaledTileSize.x * factor,
+            tszY = this.parent.scaledTileSize.y * factor;
+
+        if(iso) {
+            if(
+                this._panDelta.x >= tszX || this._panDelta.x <= -tszX ||
+                this._panDelta.y >= tszY || this._panDelta.y <= -tszY
+            )
+            {
+                this.resize(this._rendered.width, this._rendered.height);
+            }
+
+            return;
+        }
+
         //check if we need to build a buffer around the viewport
         //usually this happens on the first pan after a full render
+        //caused by a viewport resize. WE do this buffering here instead
+        //of in the initial render because in the initial render, the buffer
+        //may try to go negative which has no tiles. Plus doing it here
+        //reduces the number of tiles that need to be created initially.
 
         //moving world right, so left will be exposed
         if(dx > 0 && !this._buffered.left)
@@ -24407,32 +24389,38 @@ gf.inherits(gf.TiledLayer, gf.Layer, {
         else if(dy < 0 && !this._buffered.bottom)
             this._renderDown(this._buffered.bottom = true);
 
+        //Here is where the actual panning gets done, we check if the pan
+        //delta is greater than a scaled tile and if so pan that direction.
+        //The reason we do it in a while loop is because the delta can be
+        //large than 1 scaled tile and may require multiple render pans
+        //(this can happen if you can .pan(x, y) with large values)
+
         //moved position right, so render left
-        while(this._panDelta.x >= this.parent.scaledTileSize.x) {
+        while(this._panDelta.x >= tszX) {
             this._renderLeft();
-            this._panDelta.x -= this.parent.scaledTileSize.x;
+            this._panDelta.x -= tszX;
         }
 
         //moved position left, so render right
-        while(this._panDelta.x <= -this.parent.scaledTileSize.x) {
+        while(this._panDelta.x <= -tszX) {
             this._renderRight();
-            this._panDelta.x += this.parent.scaledTileSize.x;
+            this._panDelta.x += tszX;
         }
 
         //moved position down, so render up
-        while(this._panDelta.y >= this.parent.scaledTileSize.y) {
+        while(this._panDelta.y >= tszY) {
             this._renderUp();
-            this._panDelta.y -= this.parent.scaledTileSize.y;
+            this._panDelta.y -= tszY;
         }
 
         //moved position up, so render down
-        while(this._panDelta.y <= -this.parent.scaledTileSize.y) {
+        while(this._panDelta.y <= -tszY) {
             this._renderDown();
-            this._panDelta.y += this.parent.scaledTileSize.y;
+            this._panDelta.y += tszY;
         }
 
         if(this.hasPhysics) {
-            this.parent.parent.physics.invalidCollisions();
+            this.parent.parent.physics.reindexStatic();
         }
     },
     _renderLeft: function(forceNew) {
@@ -24667,12 +24655,20 @@ gf.inherits(gf.TiledTileset, gf.Texture, {
     getTileProperties: function(tileId) {
         if(tileId === undefined) return null;
 
+        var flags = gf.TiledTileset.FLAGS,
+            flippedX = tileId & flags.FlippedX,
+            flippedY = tileId & flags.FlippedY,
+            rotatedCW = tileId & flags.RotatedCW;
+
+        //remove flags
+        tileId &= ~(flags.FlippedX | flags.FlippedY | flags.RotatedCW);
+
         tileId = tileId - this.firstgid;
 
         //if less than 0, then this id isn't in this tileset
         if(tileId < 0) return null;
 
-        return this.tileproperties[tileId] ?
+        var props = this.tileproperties[tileId] ?
                 //get this value
                 this.tileproperties[tileId] :
                 //set this id to default values and cache
@@ -24681,6 +24677,12 @@ gf.inherits(gf.TiledTileset, gf.Texture, {
                     breakable: false,
                     type: gf.Tile.TYPE.NONE
                 };
+
+        props.flippedX = flippedX;
+        props.flippedY = flippedY;
+        props.rotatedCW = rotatedCW;
+
+        return props;
     },
     /**
      * Gets the tile texture for a tile based on it's ID
@@ -24692,6 +24694,11 @@ gf.inherits(gf.TiledTileset, gf.Texture, {
     getTileTexture: function(tileId) {
         if(tileId === undefined) return null;
 
+        var flags = gf.TiledTileset.FLAGS;
+
+        //remove flags
+        tileId &= ~(flags.FlippedX | flags.FlippedY | flags.RotatedCW);
+
         //get the internal ID of the tile in this set (0 indexed)
         tileId = tileId - this.firstgid;
 
@@ -24699,9 +24706,25 @@ gf.inherits(gf.TiledTileset, gf.Texture, {
         if(tileId < 0) return null;
 
         return this.textures[tileId];
+    },
+    contains: function(tileId) {
+        if(tileId === undefined) return false;
+
+        var flags = gf.TiledTileset.FLAGS;
+
+        //remove flags
+        tileId &= ~(flags.FlippedX | flags.FlippedY | flags.RotatedCW);
+
+        return (tileId >= this.firstgid && tileId <= this.lastgid);
     }
 });
 
+//Tileset GID flags
+gf.TiledTileset.FLAGS = {
+    FlippedX: 0x80000000,
+    FlippedY: 0x40000000,
+    RotatedCW: 0x20000000
+};
 /**
  * Tiled object group is a special layer that contains entities
  * TODO: This is all trash
@@ -24740,6 +24763,7 @@ gf.inherits(gf.TiledTileset, gf.Texture, {
     this.objects = group.objects;
 
     //translate some tiled properties to our inherited properties
+    this.type = group.type;
     this.alpha = group.opacity;
     this.visible = group.visible;
 };
@@ -24797,6 +24821,9 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                 }
             }
 
+            o.name = o.name || props.name || props.tileprops.name;
+            o.type = o.type || props.type || props.tileprops.type;
+
             //a manually specified string texture
             if(typeof props.texture === 'string') {
                 props.texture = gf.assetCache[props.texture];
@@ -24849,6 +24876,29 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                         obj.showPhysics();
                 }
 
+                if(props.tileprops) {
+                    if(props.tileprops.flippedX) {
+                        obj.scale.x = -1;
+                        obj.anchor.x = a ? a[0] : 1;
+                    }
+
+                    if(props.tileprops.flippedY) {
+                        obj.scale.y = -1;
+                        obj.anchor.y = a ? a[1] : 0;
+                    }
+
+                    //IDK if this is right
+                    if(props.tileprops.rotatedCW) {
+                        obj.rotation = gf.math.degreesToRadians(45);
+                    }
+                }
+
+                if(props.animation || props.tileprops.animation) {
+                    if(obj.gotoAndPlay) {
+                        obj.gotoAndPlay(props.animation || props.tileprops.animation);
+                    }
+                }
+
                 //set some more stuffz
                 if(typeof o.rotation === 'number')
                     obj.setRotation(o.rotation);
@@ -24889,6 +24939,7 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
                 if(k !== 'tileprops')
                     obj.properties[k] = props[k];
 
+            obj._objIndex = i;
             this.addChild(obj);
         }
 
@@ -24940,11 +24991,13 @@ gf.inherits(gf.TiledObjectGroup, gf.Layer, {
 
             if(c.destroy)
                 c.destroy();
-            else
-                this.removeChild(c);
         }
 
         return this;
+    },
+    destroy: function() {
+        this.despawn();
+        gf.Layer.prototype.destroy.call(this);
     }
 });
 
@@ -24982,6 +25035,8 @@ gf.inherits(gf.ObjectPool, Object, {
                 this.parent.addChild(o);
         }
 
+        o.__allocated = true;
+
         return o;
     },
     /**
@@ -24990,7 +25045,11 @@ gf.inherits(gf.ObjectPool, Object, {
      * @method free
      */
     free: function(o) {
-        this.pool.push(o);
+        //don't free something twice
+        if(o.__allocated) {
+            o.__allocated = false;
+            this.pool.push(o);
+        }
     },
     //have to do this hack around to be able to use
     //apply and new together
